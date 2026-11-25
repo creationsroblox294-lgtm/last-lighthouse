@@ -61,3 +61,33 @@ Creatures are sculpted, textured, rigged and animated in Blender (`LastLighthous
 Done so far: **Fog Crawler** (idle, crawl, lunge, flinch, death). The Drowned and the Tide Caller are next; until then they use greybox shapes.
 
 Players ragdoll on death (`Server/Ragdoll`). Ladders in the tower use `Client/LadderController` for a smooth hop on and off at the top.
+
+### Creature roster (all sculpted, textured, rigged and animated in Blender)
+
+Models live in `ReplicatedStorage.CreatureModels.<Kind>`, baked bone animation in
+`ReplicatedStorage.CreatureAnimData.<Kind>`; `CreatureController` plays them from the
+`Anim` / `AnimSpeed` / `AnimRestart` attributes the server sets.
+
+| Creature | In game | Clips | Model asset |
+|---|---|---|---|
+| Fog Crawler | yes (EnemyService) | Idle, Crawl, Lunge, Flinch, Death | 106333388555947 |
+| Drowned | yes (EnemyService) | Emerge, Idle, Shamble, Pound, Stagger, Death | 137757214236315 |
+| Hollow | yes (HollowService, after storm 12) | Emerge, Idle, Stalk, Run, Grab, Drag, Recoil | 101924572788940 |
+| Tide Caller | yes (TideCaller, every 10th storm) | Rise, Idle, Slam, Recoil, Sink | 110352371021365 |
+| Night Gull | model ready (later update) | Fly, Glide, Dive, Screech, Death | 112129942210312 |
+| Fog Mimic | model ready (later update) | Idle, Walk, Reveal, Lunge, Death | 123143348501152 |
+| Last Keeper | model ready (later update) | Idle, Walk, Swing, Summon, Death | 107210136670553 |
+
+Blender source: `~/the-last-lighthouse-assets/LastLighthouse_Creatures_HD.blend`.
+
+### The Hollow (between storms, from storm 13)
+Stalks the most isolated player outside the light, grabs and drags them to the fog edge.
+Free a victim with 3 harpoon hits, the **Flare** tool, the lighthouse beam, struggling
+(tap Space / the screen), or by dragging into the light while the lamp is above half fuel.
+Studio: set `workspace.DebugHollowNow = true` to make it appear a few seconds into any calm.
+
+### Map builders
+`tools/BuildLighthouse.luau` (octagonal tower, spiral stairs, furnished rooms),
+`tools/LighthouseFloorCollision.luau` (stairwell collision), `tools/BuildIsland.luau`
+(hills, creek, haze). Realistic trees come from Creator Store packs (Letaij oak, Qalus
+foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
