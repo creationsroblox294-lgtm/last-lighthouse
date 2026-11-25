@@ -139,4 +139,11 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   slowed, shaky screen) until you tap Space/screen enough times. Studio test: set the
   `DebugAnimalsFast` attribute on Workspace. Models: `ReplicatedStorage.CreatureModels.
   Snake / Spider / Bat` with clips Hang, Drop, Latch, Land, Flee (block stand-ins are used
-  until they exist).
+  if a model is missing).
+- Blender assets (LastLighthouse_Creatures_HD.blend, collections SnakeHD / SpiderHD /
+  BatHD / ForageHD), uploaded models: Snake 122994055079062, Spider 76600594312536,
+  Bat 97310903063178, Forage plants 86526358719988 (textures: snake 97894312809995,
+  spider 111102523044360, bat 75105393405429, forage 86609593311351). Anim data is uploaded
+  as a binary .rbxm holding one ModuleScript (Open Cloud refuses .rbxmx).
+- Forage visuals are Blender meshes (carrot, apple, red/blue berries, red/brown mushrooms,
+  pumpkin) kept in `ServerStorage.ForageMeshes`.

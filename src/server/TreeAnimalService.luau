@@ -94,10 +94,12 @@ local function build(kind: string): (Model, CFrame)
 			d.Massless = true
 		end
 	end
-	local box = v:GetBoundingBox()
-	local fix = (CFrame.new(box.Position) * box.Rotation):ToObjectSpace(v:GetPivot())
+	-- reference frame = the Body mesh (its -Z is the animal's head); the imported model's
+	-- bounding box can come back rotated, so it is not used here
+	local body = v:FindFirstChild("Body", true)
+	local ref = if body and body:IsA("BasePart") then body.CFrame else v:GetBoundingBox()
+	local fix = ref:ToObjectSpace(v:GetPivot())
 	v.Parent = m
-	local body = v:FindFirstChild("Body")
 	if body and body:IsA("BasePart") then
 		m.PrimaryPart = body
 	end
