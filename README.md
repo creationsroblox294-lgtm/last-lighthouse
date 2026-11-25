@@ -143,13 +143,16 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   Bat 97310903063178, Forage plants 86526358719988 (textures: snake 97894312809995,
   spider 111102523044360, bat 75105393405429, forage 86609593311351). Anim data is uploaded
   as a binary .rbxm holding one ModuleScript (Open Cloud refuses .rbxmx).
-- Ladders instead of stairs: each level has a wooden ladder against the wall with a railed
-  hatch in the floor above (old stairwells filled in, collision strips rebuilt). Built by
-  `ServerStorage.LadderBuilder`. The invisible TrussPart `ClimbSurface` drives
-  `LadderController`: climb from the wall side, you hop onto the floor at the top; walk into a
-  hatch from above to grab the ladder and hold S to go down. A truss can set a `StepOff`
-  attribute (studs) for a shorter step at the top (the lamp-room ladder uses 2.8).
+- Three floors + lamp room: ground (8), bunk room (24), floor 3 (56.4, small store room with
+  barrels, crates, bench and a hanging lantern), lamp room (88.8). The in-between landings
+  at 40.2 and 72.6 are gone.
+- Ladders instead of stairs (one per floor) built by `ServerStorage.LadderBuilder`: wooden
+  ladder against the wall, hatch in the floor above that is open on both faces of the
+  ladder, side handrails. The invisible TrussPart `ClimbSurface` drives `LadderController`:
+  climb from either side, at the top you hop sideways onto the floor beside the hatch; walk
+  into a hatch from above to grab the ladder and hold S to go down.
 - More fish: 21 schools all round the coast (`Map.FishingWaters`); a school part can carry
-  `Tint` (Color3) and `Scale` attributes, so schools differ in colour and size (~105 fish).
+  `Tint` (Color3) and `Scale` attributes, so schools differ in colour and size (~105 fish). Water is clear
+  (Terrain.WaterTransparency 0.92) so they show from the shore.
 - Forage visuals are Blender meshes (carrot, apple, red/blue berries, red/brown mushrooms,
   pumpkin) kept in `ServerStorage.ForageMeshes`.

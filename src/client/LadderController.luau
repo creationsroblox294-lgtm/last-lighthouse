@@ -1,11 +1,12 @@
 --!strict
 -- LadderController: makes the lighthouse ladders smooth to use.
 -- Roblox climbing gets stuck at the top of a ladder and is fiddly to get onto from above, so:
---   * Climbing up: when you reach the top while still moving, a short hop puts you on the floor.
---   * Going down: walk into the opening from the floor above and you grab the ladder facing it;
+--   * Ladders can be climbed from either side. At the top, a short hop puts you on the floor
+--     beside the hatch (on the side of the ladder you are holding).
+--   * Going down: walk into the hatch from the floor above and you grab the ladder facing it;
 --     then hold back (S / down on the stick) to climb down.
 -- Ladders are the invisible TrussParts named "ClimbSurface" under Workspace.Map.
--- Each truss's -Z side is where you climb; +Z points into the room you step off into.
+-- Each truss's LookVector (-Z) points at the wall; the hatch above is open on both faces.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -76,27 +77,27 @@ function LadderController.Start()
 		for _, truss in list do
 			local localPos = truss.CFrame:PointToObjectSpace(root.Position)
 			local halfY = truss.Size.Y / 2
-			if math.abs(localPos.X) > 2.2 then
+			if math.abs(localPos.X) > 2.4 then
 				continue
 			end
-			-- Climbing up and reached the top: step off onto the floor
+			-- Climbing (either side) and reached the top: step off sideways onto the floor
+			-- beside the hatch (the hatch is open in front of and behind the ladder)
 			if state == Enum.HumanoidStateType.Climbing and moving and localPos.Y > halfY - 3.4 and localPos.Y < halfY + 1.5
-				and localPos.Z < 0.5 and localPos.Z > -4 then
-				-- a ladder can ask for a shorter step-off (e.g. next to the lamp pedestal)
-				local stepOff = truss:GetAttribute("StepOff")
-				local target = truss.CFrame * CFrame.new(0, halfY + 3.0, if typeof(stepOff) == "number" then stepOff else 3.4)
-				local facing = CFrame.lookAt(target.Position, target.Position + (-truss.CFrame.LookVector * Vector3.new(1, 0, 1)))
-				hop(root, humanoid, facing, function()
+				and math.abs(localPos.Z) < 4 then
+				local side = if localPos.X >= 0 then 1 else -1
+				local target = truss.CFrame * CFrame.new(side * 3.9, halfY + 3.0, 0)
+				local away = (truss.CFrame.RightVector * side) * Vector3.new(1, 0, 1)
+				hop(root, humanoid, CFrame.lookAt(target.Position, target.Position + away), function()
 					humanoid:ChangeState(Enum.HumanoidStateType.Running)
 				end)
 				return
 			end
-			-- Walking into the opening from above: grab the ladder facing it
+			-- Walking into the hatch from the room above: grab the ladder on that side
 			if state ~= Enum.HumanoidStateType.Climbing and moving and localPos.Y > halfY + 1 and localPos.Y < halfY + 4.5
-				and localPos.Z > -0.5 and localPos.Z < 4 then
-				-- walking toward the climb side (the truss's LookVector) means stepping into the opening
+				and localPos.Z > 0 and localPos.Z < 6 then
+				-- walking toward the wall (the truss's LookVector) means stepping into the hatch
 				if humanoid.MoveDirection:Dot(truss.CFrame.LookVector) > 0.3 then
-					local target = truss.CFrame * CFrame.new(0, halfY - 3.2, -2.1)
+					local target = truss.CFrame * CFrame.new(0, halfY - 3.2, 2.1)
 					local facing = CFrame.lookAt(target.Position, Vector3.new(truss.Position.X, target.Position.Y, truss.Position.Z))
 					hop(root, humanoid, facing, function()
 						humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
