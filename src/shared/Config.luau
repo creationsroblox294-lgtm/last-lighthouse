@@ -36,9 +36,10 @@ Config.SpecialStorms = { "SilentFog", "RedTide", "GhostShip", "CalmNight" }
 -- World positions (match tools/BuildGreybox.luau)
 ---------------------------------------------------------------------------
 Config.World = {
-	IslandCenter = Vector3.new(0, 3, 0),
+	IslandCenter = Vector3.new(0, 3, 170), -- the island was doubled in size toward the south
+	IslandRadius = 310,
 	TowerCenter = Vector3.new(55, 35, -80), -- base of the tower, on the cliff top
-	LampPosition = Vector3.new(55, 75, -80),
+	LampPosition = Vector3.new(55, 107.4, -80), -- tower raised by 32.4 studs
 	RampBottom = Vector3.new(55, 6, 48),
 	RampTop = Vector3.new(55, 36, -50),
 	DoorFront = Vector3.new(55, 36.5, -68),
@@ -78,7 +79,7 @@ Config.Enemies = {
 	MaxAlive = 40,
 	SpawnInterval = 2.5,
 	SwarmSpawnInterval = 1,
-	SpawnRadius = 140,
+	SpawnRadius = 175, -- creatures walk out of the fog this far from the lighthouse
 	PlayerScale = 0.35, -- each extra player adds 35% more creatures (fuel drain doesn't change)
 	FogCrawler = {
 		Health = 30,
@@ -117,7 +118,7 @@ Config.Hollow = {
 	DragSpeed = 8,
 	HuntDistance = 45,
 	GrabRange = 4.5,
-	FogEdgeRadius = 165,
+	FogEdgeRadius = 200,
 	LightSafeFuelFraction = 0.5, -- the lit area protects you only above half fuel
 	HitsToDriveOff = 3,
 	StrugglesToEscape = 12,
@@ -167,6 +168,22 @@ Config.Combat = {
 ---------------------------------------------------------------------------
 -- Resources
 ---------------------------------------------------------------------------
+-- Fish swimming in the sea around the island (FishService). Wade in or stand on the dock to catch them.
+Config.Fish = {
+	PerSchool = 5,
+	RespawnSeconds = 25,
+	CatchDistance = 12,
+	SwimSpeed = 3,
+	Depth = -1.6, -- just under the surface (water level is 0)
+	-- school centres are set from Map.FishingWaters parts if present, else these
+	Schools = {
+		Vector3.new(-30, 0, -175), -- off the lighthouse dock
+		Vector3.new(15, 0, -160),
+		Vector3.new(-120, 0, -105),
+		Vector3.new(170, 0, -60),
+	},
+}
+
 Config.Resources = {
 	Kinds = { "Wood", "Scrap", "Oil", "Fish" },
 	StartStorage = { Wood = 6, Scrap = 2, Oil = 1, Fish = 1 },
@@ -176,6 +193,7 @@ Config.Resources = {
 	TreeRegrowSeconds = 45,
 	FishCooldownSeconds = 15,
 	FishHeal = 35,
+	CookSeconds = 1.5, -- hold time at the fireplace
 	CarryWalkSpeed = 12,
 	WalkSpeed = 16,
 }

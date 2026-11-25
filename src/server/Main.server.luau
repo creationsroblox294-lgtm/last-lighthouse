@@ -6,6 +6,7 @@ local Server = script.Parent
 local StormDirector = require(Server:WaitForChild("StormDirector"))
 local LightService = require(Server:WaitForChild("LightService"))
 local ResourceService = require(Server:WaitForChild("ResourceService"))
+local FishService = require(Server:WaitForChild("FishService"))
 local BuildService = require(Server:WaitForChild("BuildService"))
 local EnemyService = require(Server:WaitForChild("EnemyService"))
 local TideCaller = require(Server:WaitForChild("TideCaller"))
@@ -19,6 +20,7 @@ require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild
 
 LightService.Start()
 ResourceService.Start()
+FishService.Start()
 BuildService.Start()
 EnemyService.Start()
 TideCaller.Start()

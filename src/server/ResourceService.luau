@@ -37,7 +37,8 @@ local ITEM_LOOK: { [string]: { size: Vector3, color: Color3, material: Enum.Mate
 	Wood = { size = Vector3.new(1.2, 1.2, 4), color = Color3.fromRGB(125, 92, 62), material = Enum.Material.Wood, label = "Wood" },
 	Scrap = { size = Vector3.new(2, 1, 2), color = Color3.fromRGB(120, 124, 130), material = Enum.Material.CorrodedMetal, label = "Scrap metal" },
 	Oil = { size = Vector3.new(2, 2.6, 2), color = Color3.fromRGB(40, 38, 35), material = Enum.Material.Metal, label = "Oil barrel" },
-	Fish = { size = Vector3.new(0.8, 0.8, 2), color = Color3.fromRGB(230, 140, 70), material = Enum.Material.SmoothPlastic, label = "Fish" },
+	Fish = { size = Vector3.new(0.8, 0.8, 2), color = Color3.fromRGB(196, 120, 58), material = Enum.Material.SmoothPlastic, label = "Cooked fish" },
+	RawFish = { size = Vector3.new(0.7, 0.8, 2), color = Color3.fromRGB(150, 170, 182), material = Enum.Material.SmoothPlastic, label = "Raw fish" },
 	WhaleOil = { size = Vector3.new(2, 2.6, 2), color = Color3.fromRGB(230, 200, 90), material = Enum.Material.Neon, label = "Whale oil" },
 }
 
@@ -197,6 +198,11 @@ local function give(player: Player, kind: string): boolean
 	return true
 end
 
+-- Public: hand a fresh item to the player (FishService uses this)
+function ResourceService.Give(player: Player, kind: string): boolean
+	return give(player, kind)
+end
+
 -- Remove the carried item and return its kind
 local function consume(player: Player): string?
 	local carry = carrying[player]
@@ -255,6 +261,10 @@ local function setupStations(map: Instance)
 				Remotes.notify(player, "Whale oil can't be stored. Pour it into the lamp!", nil)
 				return
 			end
+			if kind == "RawFish" then
+				Remotes.notify(player, "Cook it at the fireplace first, then store it.", nil)
+				return
+			end
 			consume(player)
 			ResourceService.AddStorage(kind, 1)
 			Remotes.notify(player, `Stored 1 {kind}.`, "Good")
@@ -294,6 +304,33 @@ local function setupStations(map: Instance)
 		end)
 	end
 
+	-- Fireplace: carried raw fish -> cooked fish (takes a few seconds by the fire)
+	local fireplace = ground and ground:FindFirstChild("Fireplace")
+	local hearth = fireplace and (fireplace:FindFirstChild("Hearth") or fireplace:FindFirstChildWhichIsA("BasePart"))
+	if hearth then
+		local cooking: { [Player]: boolean } = {}
+		addPrompt(hearth, "Cook fish", "Fireplace", R.CookSeconds, function(player)
+			if ResourceService.GetCarried(player) ~= "RawFish" then
+				Remotes.notify(player, "Catch a fish in the sea (or the tide pools), then cook it here.", nil)
+				return
+			end
+			if cooking[player] then
+				return
+			end
+			cooking[player] = true
+			consume(player)
+			Remotes.notify(player, "Sizzling...", nil)
+			task.delay(1.2, function()
+				cooking[player] = nil
+				if player.Parent and give(player, "Fish") then
+					Remotes.notify(player, "Cooked fish! Store it in the chest or eat it in the bunk room.", "Good")
+				else
+					ResourceService.SpawnItem("Fish", hearth.Position + Vector3.new(0, 0, 3))
+				end
+			end)
+		end)
+	end
+
 	local food = bunk and bunk:FindFirstChild("FoodStorage")
 	if food then
 		addPrompt(food, "Eat fish", "Food", 0.5, function(player)
@@ -301,10 +338,14 @@ local function setupStations(map: Instance)
 			if not humanoid or humanoid.Health <= 0 then
 				return
 			end
+			if ResourceService.GetCarried(player) == "RawFish" then
+				Remotes.notify(player, "Raw fish will make you sick. Cook it at the fireplace downstairs!", nil)
+				return
+			end
 			if ResourceService.GetCarried(player) == "Fish" then
 				consume(player)
 			elseif not ResourceService.Spend("Fish", 1) then
-				Remotes.notify(player, "No fish! Catch some at the tide pools.", nil)
+				Remotes.notify(player, "No cooked fish! Catch one in the sea and cook it at the fireplace.", nil)
 				return
 			end
 			humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + R.FishHeal)
@@ -352,7 +393,7 @@ local function setupGathering(map: Instance)
 	local function fishingSpot(part: BasePart, label: string): ProximityPrompt
 		local prompt: ProximityPrompt
 		prompt = addPrompt(part, "Catch fish", label, 2, function(player)
-			if give(player, "Fish") then
+			if give(player, "RawFish") then
 				prompt.Enabled = false
 				task.delay(R.FishCooldownSeconds, function()
 					prompt.Enabled = true

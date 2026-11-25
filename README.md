@@ -91,3 +91,16 @@ Studio: set `workspace.DebugHollowNow = true` to make it appear a few seconds in
 `tools/LighthouseFloorCollision.luau` (stairwell collision), `tools/BuildIsland.luau`
 (hills, creek, haze). Realistic trees come from Creator Store packs (Letaij oak, Qalus
 foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
+
+### Island v2 (bigger island, taller tower, dock, fishing)
+- Tower raised by 32.4 studs: a stone shaft with two extra spiral flights and landings sits
+  between the bunk room and the lamp room (`LampRoom.Shaft`); lamp is now at y 107.4.
+  Dark slate / oxblood exterior.
+- Island radius ~310 around (0, 170) — grows south, the lighthouse cliff stays on the north
+  coast. Wreck Beach moved to the north-west shore, Tide Pools to the east shore.
+  ~165 realistic trees spread across it; the creek runs all the way to the south-west coast.
+- `Map.OldDock` is now a new dock just west of the cliff with a Blender rowboat
+  (asset 102575389973686). Fishing from its end still works (storm unlock attribute).
+- Fish (Blender, asset 126593409966690; clips Swim / Flee / Flop) swim in `Map.FishingWaters`
+  schools. Hold E near one to catch a **raw fish**, cook it at the lighthouse **fireplace**,
+  then store it or eat it in the bunk room. Tide pools also give raw fish now.

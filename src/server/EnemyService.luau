@@ -187,15 +187,27 @@ local function groundAt(p: Vector3): Vector3
 	return if hit then hit.Position else Vector3.new(p.X, 3, p.Z)
 end
 
+local landRay = RaycastParams.new()
+landRay.FilterType = Enum.RaycastFilterType.Include
+
+local function onLand(p: Vector3): boolean
+	landRay.FilterDescendantsInstances = { Workspace.Terrain }
+	local hit = Workspace:Raycast(Vector3.new(p.X, 150, p.Z), Vector3.new(0, -300, 0), landRay)
+	return hit ~= nil and hit.Material ~= Enum.Material.Water and hit.Position.Y > 2
+end
+
+-- A point on land in the fog ring around the lighthouse
 local function fogEdgePoint(): Vector3
-	for _ = 1, 10 do
+	local c = W.TowerCenter
+	for _ = 1, 24 do
 		local a = rng:NextNumber(0, math.pi * 2)
-		local p = W.IslandCenter + Vector3.new(math.cos(a) * E.SpawnRadius, 0, math.sin(a) * E.SpawnRadius)
-		if not insideCliff(p) then
+		local r = E.SpawnRadius * rng:NextNumber(0.85, 1.1)
+		local p = Vector3.new(c.X + math.cos(a) * r, 0, c.Z + math.sin(a) * r)
+		if not insideCliff(p) and onLand(p) then
 			return groundAt(p)
 		end
 	end
-	return groundAt(W.IslandCenter + Vector3.new(0, 0, E.SpawnRadius))
+	return groundAt(W.RampBottom + Vector3.new(0, 0, E.SpawnRadius * 0.8))
 end
 
 local function drownedPoint(): Vector3
@@ -206,8 +218,8 @@ local function drownedPoint(): Vector3
 		local p = zone.Position + Vector3.new(rng:NextNumber(-0.5, 0.5) * zone.Size.X, 0, rng:NextNumber(-0.5, 0.5) * zone.Size.Z)
 		-- Climb out right at the water's edge (on the sand, not in the sea)
 		local flat = Vector3.new(p.X - W.IslandCenter.X, 0, p.Z - W.IslandCenter.Z)
-		if flat.Magnitude > E.SpawnRadius then
-			p = W.IslandCenter + flat.Unit * E.SpawnRadius
+		if flat.Magnitude > W.IslandRadius - 6 then
+			p = W.IslandCenter + flat.Unit * (W.IslandRadius - 6)
 		end
 		return groundAt(p)
 	end
