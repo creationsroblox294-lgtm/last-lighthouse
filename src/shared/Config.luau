@@ -105,6 +105,32 @@ Config.Enemies = {
 	},
 }
 
+-- The Hollow: a stalker between storms (see HollowService)
+Config.Hollow = {
+	ArrivesAfterStorm = 12, -- first appears at the dawn after storm 12
+	MinInterval = 240, -- seconds between appearances
+	MaxInterval = 480,
+	EmergeSeconds = 3,
+	GiveUpSeconds = 25, -- nobody outside the light: it leaves
+	StalkSpeed = 9,
+	RunSpeed = 21,
+	DragSpeed = 8,
+	HuntDistance = 45,
+	GrabRange = 4.5,
+	FogEdgeRadius = 165,
+	LightSafeFuelFraction = 0.5, -- the lit area protects you only above half fuel
+	HitsToDriveOff = 3,
+	StrugglesToEscape = 12,
+	FlareRange = 45,
+	FlareCooldown = 40,
+	Lairs = {
+		Vector3.new(-75, 6, -30), -- grove
+		Vector3.new(-28, 3, 140), -- dock
+		Vector3.new(-109, 4, 121), -- wreck beach
+		Vector3.new(120, 4, 20), -- tide pools
+	},
+}
+
 Config.TideCaller = {
 	Health = 900,
 	ExtraPlayerHealth = 0.3,

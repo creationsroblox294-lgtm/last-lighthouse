@@ -3,6 +3,7 @@
 --   Harpoon: the main weapon. Auto-aims at the nearest creature in front of you
 --            (works the same on touch, gamepad and mouse). Server checks range and cooldown.
 --   Hammer:  repairs the floor you're on, or a nearby barricade (costs wood or scrap).
+--   Flare:   a flare gun that drives the Hollow off (recharges every 40s).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,11 +14,14 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local EnemyService = require(script.Parent:WaitForChild("EnemyService"))
 local BuildService = require(script.Parent:WaitForChild("BuildService"))
+local HollowService = require(script.Parent:WaitForChild("HollowService"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local C = Config.Combat
 local CombatService = {}
 
 local lastHarpoon: { [Player]: number } = {}
+local lastFlare: { [Player]: number } = {}
 
 local function makeTool(name: string, size: Vector3, color: Color3, material: Enum.Material, tip: Color3?): Tool
 	local tool = Instance.new("Tool")
@@ -87,6 +91,12 @@ local function harpoon(player: Player)
 	end
 	local target = EnemyService.FindTarget(root.Position, root.CFrame.LookVector, C.HarpoonRange, C.HarpoonConeDegrees)
 	if not target then
+		if HollowService.TryHarpoon(root.Position, root.CFrame.LookVector, C.HarpoonRange, C.HarpoonConeDegrees) then
+			local hp = HollowService.GetPosition()
+			if hp then
+				streak(root.Position + Vector3.new(0, 1, 0), hp + Vector3.new(0, 5, 0))
+			end
+		end
 		return
 	end
 	local targetRoot = target.Parent and target.Parent:FindFirstChild("HumanoidRootPart")
@@ -94,6 +104,25 @@ local function harpoon(player: Player)
 		streak(root.Position + Vector3.new(0, 1, 0), targetRoot.Position)
 	end
 	target:TakeDamage(C.HarpoonDamage)
+end
+
+local function flare(player: Player)
+	local t = os.clock()
+	local cooldown = Config.Hollow.FlareCooldown
+	if t - (lastFlare[player] or -math.huge) < cooldown then
+		Remotes.notify(player, `The flare gun is reloading ({math.ceil(cooldown - (t - (lastFlare[player] or 0)))}s).`, nil)
+		return
+	end
+	local root = rootOf(player)
+	if not root then
+		return
+	end
+	lastFlare[player] = t
+	local at = root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 8, 0)
+	Remotes.event("FlareFired"):FireAllClients(at)
+	if HollowService.Flare(root.Position) then
+		Remotes.notify(player, "The flare drove the Hollow back!", "Good")
+	end
 end
 
 local templates: { Tool } = {}
@@ -111,6 +140,8 @@ local function equip(player: Player)
 				harpoon(player)
 			elseif kind == "Hammer" then
 				BuildService.TryRepair(player)
+			elseif kind == "Flare" then
+				flare(player)
 			end
 		end)
 		tool.Parent = backpack
@@ -120,6 +151,7 @@ end
 function CombatService.Start()
 	table.insert(templates, makeTool("Harpoon", Vector3.new(0.35, 0.35, 5), Color3.fromRGB(110, 80, 55), Enum.Material.Wood, Color3.fromRGB(170, 175, 180)))
 	table.insert(templates, makeTool("Hammer", Vector3.new(0.4, 0.4, 2.4), Color3.fromRGB(110, 80, 55), Enum.Material.Wood, Color3.fromRGB(90, 95, 100)))
+	table.insert(templates, makeTool("Flare", Vector3.new(0.45, 0.45, 1.6), Color3.fromRGB(200, 60, 30), Enum.Material.SmoothPlastic, Color3.fromRGB(60, 60, 64)))
 
 	local function onPlayer(player: Player)
 		player.CharacterAdded:Connect(function()
@@ -135,6 +167,7 @@ function CombatService.Start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		lastHarpoon[player] = nil
+		lastFlare[player] = nil
 	end)
 end
 

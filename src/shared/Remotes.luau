@@ -12,6 +12,8 @@ local EVENT_NAMES = {
 	"DropItem", -- client -> server: ()
 	"AimBeam", -- client -> server: (angleDegrees: number)
 	"ReleaseBeam", -- client -> server: ()
+	"Struggle", -- client -> server: () while held by the Hollow
+	"FlareFired", -- server -> client: (position: Vector3) flash effect
 }
 
 local Remotes = {}

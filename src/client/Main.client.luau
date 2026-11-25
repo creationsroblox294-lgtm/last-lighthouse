@@ -7,6 +7,7 @@ local WeatherController = require(script.Parent:WaitForChild("WeatherController"
 local HUDController = require(script.Parent:WaitForChild("HUDController"))
 local CreatureController = require(script.Parent:WaitForChild("CreatureController"))
 local LadderController = require(script.Parent:WaitForChild("LadderController"))
+local HollowController = require(script.Parent:WaitForChild("HollowController"))
 
 FogController.Start()
 LightController.Start()
@@ -14,3 +15,4 @@ WeatherController.Start()
 HUDController.Start()
 CreatureController.Start()
 LadderController.Start()
+HollowController.Start()
