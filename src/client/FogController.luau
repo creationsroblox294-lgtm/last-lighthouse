@@ -48,6 +48,7 @@ local function apply(phase: string, instant: boolean)
 		Brightness = look.Brightness,
 		Ambient = look.Ambient,
 		OutdoorAmbient = look.Ambient,
+		ExposureCompensation = look.Exposure or 0,
 	}
 	if not jumpClock then
 		lightingGoal.ClockTime = look.ClockTime

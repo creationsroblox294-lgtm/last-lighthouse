@@ -588,10 +588,14 @@ function EnemyService.Start()
 	local runtime = Workspace:FindFirstChild("Runtime") or Instance.new("Folder")
 	runtime.Name = "Runtime"
 	runtime.Parent = Workspace
-	local f = Instance.new("Folder")
-	f.Name = "Enemies"
-	f.Parent = runtime
-	folder = f
+	-- reuse the folder if FishService made it first (one Enemies folder for the animator)
+	local f = runtime:FindFirstChild("Enemies")
+	if not f then
+		f = Instance.new("Folder")
+		f.Name = "Enemies"
+		f.Parent = runtime
+	end
+	folder = f :: Folder
 
 	StormDirector.PhaseChanged:Connect(function(info)
 		if info.phase == "Storm" then

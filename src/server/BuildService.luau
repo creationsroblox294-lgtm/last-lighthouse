@@ -38,8 +38,8 @@ local DAMAGED_COLOR = Color3.fromRGB(45, 40, 38)
 local FLOOR_LABEL = { GroundFloor = "ground floor", BunkRoom = "bunk room", LampRoom = "lamp room" }
 
 local SLOTS = {
-	{ name = "RampBarricade", cf = CFrame.new(55, 36.5, -48), size = Vector3.new(16, 3, 1.5) },
-	{ name = "DoorBarricade", cf = CFrame.new(55, 37.3, -66.9), size = Vector3.new(10, 3, 1.5) },
+	{ name = "RampBarricade", cf = CFrame.new(55, 7.4, -55), size = Vector3.new(16, 3, 1.5) },
+	{ name = "DoorBarricade", cf = CFrame.new(55, 8.1, -66.9), size = Vector3.new(10, 3, 1.5) },
 }
 
 local function paintFloor(name: string)

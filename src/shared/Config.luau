@@ -38,12 +38,12 @@ Config.SpecialStorms = { "SilentFog", "RedTide", "GhostShip", "CalmNight" }
 Config.World = {
 	IslandCenter = Vector3.new(0, 3, 170), -- the island was doubled in size toward the south
 	IslandRadius = 310,
-	TowerCenter = Vector3.new(55, 35, -80), -- base of the tower, on the cliff top
-	LampPosition = Vector3.new(55, 107.4, -80), -- tower raised by 32.4 studs
-	RampBottom = Vector3.new(55, 6, 48),
-	RampTop = Vector3.new(55, 36, -50),
-	DoorFront = Vector3.new(55, 36.5, -68),
-	CliffTopY = 35,
+	TowerCenter = Vector3.new(55, 5.8, -80), -- base of the tower, on the meadow (no cliff any more)
+	LampPosition = Vector3.new(55, 94.4, -80),
+	RampBottom = Vector3.new(55, 6, -40), -- path in front of the door (supply drops land here)
+	RampTop = Vector3.new(55, 7, -56),
+	DoorFront = Vector3.new(55, 7.3, -68),
+	CliffTopY = 1000, -- no cliff: disables the old ramp routing
 	BossPosition = Vector3.new(55, 0, -190),
 }
 
@@ -222,12 +222,13 @@ Config.Progress = {
 ---------------------------------------------------------------------------
 Config.PhaseLook = {
 	Calm = {
-		ClockTime = 14,
-		Brightness = 2.5,
-		Ambient = Color3.fromRGB(110, 115, 125),
-		FogDensity = 0.25,
-		FogHaze = 0.5,
-		FogColor = Color3.fromRGB(200, 205, 210),
+		ClockTime = 13,
+		Brightness = 3.4,
+		Exposure = 0.35,
+		Ambient = Color3.fromRGB(150, 155, 160),
+		FogDensity = 0.16,
+		FogHaze = 0.15,
+		FogColor = Color3.fromRGB(215, 225, 232),
 	},
 	Warning = {
 		ClockTime = 16.5,
@@ -246,18 +247,20 @@ Config.PhaseLook = {
 		FogColor = Color3.fromRGB(70, 80, 95),
 	},
 	Dawn = {
-		ClockTime = 6.8,
-		Brightness = 1.8,
-		Ambient = Color3.fromRGB(120, 105, 100),
-		FogDensity = 0.35,
-		FogHaze = 1.5,
+		ClockTime = 7.4,
+		Brightness = 2.6,
+		Exposure = 0.25,
+		Ambient = Color3.fromRGB(150, 135, 125),
+		FogDensity = 0.24,
+		FogHaze = 0.8,
 		FogColor = Color3.fromRGB(230, 190, 160),
 	},
 	Won = {
-		ClockTime = 14,
-		Brightness = 2.5,
-		Ambient = Color3.fromRGB(110, 115, 125),
-		FogDensity = 0.2,
+		ClockTime = 13,
+		Brightness = 3.4,
+		Exposure = 0.35,
+		Ambient = Color3.fromRGB(150, 155, 160),
+		FogDensity = 0.14,
 		FogHaze = 0,
 		FogColor = Color3.fromRGB(210, 215, 220),
 	},

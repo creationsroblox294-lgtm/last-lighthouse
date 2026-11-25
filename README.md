@@ -104,3 +104,19 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
 - Fish (Blender, asset 126593409966690; clips Swim / Flee / Flop) swim in `Map.FishingWaters`
   schools. Hold E near one to catch a **raw fish**, cook it at the lighthouse **fireplace**,
   then store it or eat it in the bunk room. Tide pools also give raw fish now.
+
+### Island v3 (tower on the ground, cartoon forest)
+- The cliff and ramp are gone: the lighthouse stands on flat grass at (55, 7, -80). It is one
+  flight taller (`LampRoom.Shaft2`, built by the `extraFlight` stage); lamp at y 94.4.
+  Floors: 7.0 / 23.0 / 39.2 / 55.4 / 71.6, gallery deck 87.8. `Config.World.CliffTopY` is
+  set to 1000 so enemy routing never uses the old ramp.
+- Interior decluttered (barrels, coat rack, crafting bench, side table, extra chairs, bunk
+  desk removed) and every station has a floating label: Store items, Take fuel, Cook fish,
+  Eat, Pour fuel, Aim the beam.
+- Forest restyled like 99 Nights in the Forest: blocky layered pines with buttress roots,
+  a few blocky leafy trees and cube bushes, built by `tools/CartoonForest.luau`
+  (`ServerStorage.CartoonForest`). The old realistic trees are kept in
+  `ServerStorage.OldForestBackup` if you want them back. Monsters are unchanged.
+- Brighter days: Calm/Dawn/Won looks raise Brightness and add `Exposure`
+  (ExposureCompensation), with thinner fog. Lighting style is Soft; grass is shorter and
+  a softer green.
