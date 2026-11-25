@@ -151,6 +151,12 @@ end
 
 local function buildDrowned(pos: Vector3): (Model, Humanoid, BasePart)
 	local model, humanoid, root = newBody("Drowned", pos, Vector3.new(2, 2, 1), 2.8, E.Drowned)
+	if attachVisual(model, root, "Drowned", 2.8 + 1) then
+		-- climbs out of the surf first
+		model:SetAttribute("Anim", "Emerge")
+		model:SetAttribute("SpawnedAt", os.clock())
+		return model, humanoid, root
+	end
 	local skin = Color3.fromRGB(45, 72, 78)
 	weld(root, piece(Vector3.new(2.6, 3, 1.4), skin, Enum.Material.Slate), CFrame.new(0, 1.5, 0))
 	weld(root, piece(Vector3.new(1.7, 1.7, 1.7), skin, Enum.Material.Slate, Enum.PartType.Ball), CFrame.new(0, 3.8, -0.1))
@@ -374,6 +380,8 @@ local function hitBarricade(e: Enemy, t: number): boolean
 	e.humanoid:MoveTo(barricade.Position)
 	if ready(e, t) then
 		BuildService.DamageBarricade(barricade, e.stats.StructureDamage or e.stats.Damage)
+		e.attackUntil = t + 1.0
+		e.model:SetAttribute("AnimRestart", (e.model:GetAttribute("AnimRestart") or 0) + 1)
 	end
 	return true
 end
@@ -387,6 +395,8 @@ local function attackTower(e: Enemy, t: number)
 		e.humanoid:MoveTo(door)
 		if ready(e, t) then
 			BuildService.DamageTower(e.stats.StructureDamage or e.stats.Damage)
+			e.attackUntil = t + 1.0
+			e.model:SetAttribute("AnimRestart", (e.model:GetAttribute("AnimRestart") or 0) + 1)
 		end
 	else
 		e.humanoid:MoveTo(routeTo(e, door))
@@ -440,11 +450,23 @@ local function drownedThink(e: Enemy, _dt: number, t: number)
 	local pos = e.root.Position
 	local lit = LightService.IsPointLit(pos)
 	e.humanoid.WalkSpeed = e.stats.Speed * (if lit then e.stats.LightSlowFactor else 1)
+	if lit and t >= e.flinchCooldown then
+		-- the light makes it reel back for a moment
+		e.flinchUntil = t + 0.8
+		e.flinchCooldown = t + 4
+	end
+	local spawnedAt = e.model:GetAttribute("SpawnedAt")
+	if typeof(spawnedAt) == "number" and t - spawnedAt < 2.6 then
+		e.humanoid:MoveTo(pos) -- still climbing out
+		return
+	end
 	local target = nearestPlayer(pos, false, 10)
 	if target then
 		e.humanoid:MoveTo(target.root.Position)
 		if target.distance <= e.stats.AttackRange and ready(e, t) then
 			target.humanoid:TakeDamage(e.stats.Damage)
+			e.attackUntil = t + 1.0
+			e.model:SetAttribute("AnimRestart", (e.model:GetAttribute("AnimRestart") or 0) + 1)
 		end
 		return
 	end
@@ -452,22 +474,31 @@ local function drownedThink(e: Enemy, _dt: number, t: number)
 end
 
 -- Which Blender clip should this creature play right now?
-local CRAWL_STUDS_PER_SECOND = 2.5 -- ground speed the crawl cycle was animated at
+-- per creature: clip names and the ground speed (studs/s) the move cycle was animated at
+local CLIPS = {
+	FogCrawler = { flinch = "Flinch", attack = "Lunge", move = "Crawl", moveSpeed = 2.5, maxRate = 4.5 },
+	Drowned = { flinch = "Stagger", attack = "Pound", move = "Shamble", moveSpeed = 3.4, maxRate = 2.6 },
+}
 local function updateAnim(e: Enemy, t: number)
-	if not e.model:GetAttribute("Creature") then
+	local kind = e.model:GetAttribute("Creature")
+	local clips = typeof(kind) == "string" and CLIPS[kind]
+	if not clips then
 		return
 	end
 	local anim, speed = "Idle", 1
-	if t < e.flinchUntil then
-		anim = "Flinch"
+	local spawnedAt = e.model:GetAttribute("SpawnedAt")
+	if typeof(spawnedAt) == "number" and t - spawnedAt < 2.6 then
+		anim = "Emerge"
+	elseif t < e.flinchUntil then
+		anim = clips.flinch
 	elseif t < e.attackUntil then
-		anim = "Lunge"
+		anim = clips.attack
 	else
 		local v = e.root.AssemblyLinearVelocity
 		local flat = Vector3.new(v.X, 0, v.Z).Magnitude
 		if flat > 1.5 then
-			anim = "Crawl"
-			speed = math.clamp(flat / CRAWL_STUDS_PER_SECOND, 0.6, 4.5)
+			anim = clips.move
+			speed = math.clamp(flat / clips.moveSpeed, 0.6, clips.maxRate)
 		end
 	end
 	if anim ~= e.anim then
