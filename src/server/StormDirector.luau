@@ -1,11 +1,15 @@
 --!strict
--- StormDirector: runs the calm -> warning -> storm -> dawn cycle and keeps the storm count.
+-- StormDirector: runs the calm -> warning -> storm -> dawn cycle, keeps the storm count,
+-- and ends the run when the lighthouse falls or everyone is lost.
 --
--- - Writes the state to ReplicatedStorage.StormState (attributes) for clients.
--- - Fires Remotes "PhaseChanged" to all clients on every phase change.
--- - Other server modules can listen with StormDirector.PhaseChanged:Connect(function(info) ... end)
+-- - State goes to SharedState "Storm" (attributes) for clients, plus Remotes "PhaseChanged".
+-- - Server modules listen with:
+--     StormDirector.PhaseChanged:Connect(function(info) ... end)
+--     StormDirector.RunReset:Connect(function() ... end)        -- a new run is starting
+--     StormDirector.StormSurvived:Connect(function(stormNumber) ... end)
+-- - A boss can keep the storm going with StormDirector.HoldStorm(name, predicate, maxSeconds).
 --
--- This is the only server module allowed a running loop (see DESIGN.md, Tech plan).
+-- This is the only server module allowed a long-running phase loop (see DESIGN.md, Tech plan).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,20 +18,26 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
-local StormState = require(Shared:WaitForChild("StormState"))
+local SharedState = require(Shared:WaitForChild("SharedState"))
 local Types = require(Shared:WaitForChild("Types"))
 
 type Phase = Types.Phase
 type PhaseInfo = Types.PhaseInfo
+type Hold = { predicate: () -> boolean, untilTime: number }
 
 local StormDirector = {}
 
 local phaseChangedEvent = Instance.new("BindableEvent")
 StormDirector.PhaseChanged = phaseChangedEvent.Event
+local runResetEvent = Instance.new("BindableEvent")
+StormDirector.RunReset = runResetEvent.Event
+local stormSurvivedEvent = Instance.new("BindableEvent")
+StormDirector.StormSurvived = stormSurvivedEvent.Event
 
 local rng = Random.new()
 local started = false
 local state: Configuration
+local runState: Configuration
 local phaseChangedRemote: RemoteEvent
 
 local stormsSurvived = 0
@@ -36,6 +46,13 @@ local isGreatStorm = false
 local specialStorm: string? = nil
 local currentPhase: Phase = "Calm"
 local phaseEndsAt = 0
+local holding = false
+local lostReason: string? = nil
+local holds: { [string]: Hold } = {}
+
+local function now(): number
+	return Workspace:GetServerTimeNow()
+end
 
 local function fastCycle(): boolean
 	if Config.DebugFastCycle then
@@ -46,7 +63,7 @@ end
 
 local function durationOf(phase: Phase): number
 	if fastCycle() then
-		return Config.DebugPhaseSeconds
+		return if phase == "Storm" then Config.DebugStormSeconds else Config.DebugPhaseSeconds
 	end
 	local d = Config.PhaseDurations
 	if phase == "Calm" then
@@ -72,6 +89,10 @@ function StormDirector.GetInfo(): PhaseInfo
 	}
 end
 
+function StormDirector.GetPhase(): Phase
+	return currentPhase
+end
+
 local function publish()
 	state:SetAttribute("Phase", currentPhase)
 	state:SetAttribute("CurrentStorm", currentStorm)
@@ -79,18 +100,58 @@ local function publish()
 	state:SetAttribute("PhaseEndsAt", phaseEndsAt)
 	state:SetAttribute("IsGreatStorm", isGreatStorm)
 	state:SetAttribute("SpecialStorm", specialStorm or "")
+	state:SetAttribute("Holding", holding)
 
 	local info = StormDirector.GetInfo()
 	phaseChangedRemote:FireAllClients(info)
 	phaseChangedEvent:Fire(info)
 end
 
-local function runPhase(phase: Phase)
-	local duration = durationOf(phase)
+-- Wait until a time; returns false if the run was lost meanwhile
+local function waitUntil(t: number): boolean
+	while now() < t do
+		if lostReason then
+			return false
+		end
+		task.wait(0.25)
+	end
+	return lostReason == nil
+end
+
+local function anyHoldActive(): boolean
+	local active = false
+	for name, hold in holds do
+		if now() >= hold.untilTime or not hold.predicate() then
+			holds[name] = nil
+		else
+			active = true
+		end
+	end
+	return active
+end
+
+local function runPhase(phase: Phase): boolean
 	currentPhase = phase
-	phaseEndsAt = Workspace:GetServerTimeNow() + duration
+	holding = false
+	phaseEndsAt = now() + durationOf(phase)
 	publish()
-	task.wait(duration)
+	if not waitUntil(phaseEndsAt) then
+		return false
+	end
+	-- A boss can keep the storm going until it is beaten (or its time runs out)
+	if phase == "Storm" and anyHoldActive() then
+		holding = true
+		phaseEndsAt = 0
+		publish()
+		while anyHoldActive() do
+			if lostReason then
+				return false
+			end
+			task.wait(0.25)
+		end
+		holding = false
+	end
+	return lostReason == nil
 end
 
 -- Decide what kind of storm is coming (shown on the HUD during the calm)
@@ -102,19 +163,72 @@ local function rollStorm()
 	end
 end
 
-local function loop()
+-- One full run. Returns true if the group survived every storm.
+local function runOnce(): boolean
+	stormsSurvived = 0
+	-- Studio only: set the DebugStartStorm attribute on Workspace to jump ahead (e.g. 10 for the boss)
+	local startAt = Workspace:GetAttribute("DebugStartStorm")
+	if RunService:IsStudio() and typeof(startAt) == "number" and startAt > 1 then
+		stormsSurvived = math.clamp(math.floor(startAt) - 1, 0, Config.MaxStorms - 1)
+	end
 	while stormsSurvived < Config.MaxStorms do
 		currentStorm = stormsSurvived + 1
 		rollStorm()
-		runPhase("Calm")
-		runPhase("Warning")
-		runPhase("Storm")
+		table.clear(holds)
+		if not runPhase("Calm") then
+			return false
+		end
+		if not runPhase("Warning") then
+			return false
+		end
+		if not runPhase("Storm") then
+			return false
+		end
 		stormsSurvived += 1
-		runPhase("Dawn")
+		stormSurvivedEvent:Fire(currentStorm)
+		if not runPhase("Dawn") then
+			return false
+		end
 	end
-	currentPhase = "Won"
-	phaseEndsAt = 0
-	publish()
+	return true
+end
+
+local function loop()
+	while true do
+		lostReason = nil
+		runState:SetAttribute("LostReason", "")
+		table.clear(holds)
+		runResetEvent:Fire()
+		local won = runOnce()
+		holding = false
+		if won then
+			currentPhase = "Won"
+			phaseEndsAt = now() + 30
+			publish()
+			Remotes.notify(nil, `You kept the light burning through {Config.MaxStorms} storms!`, "Good")
+			task.wait(30)
+		else
+			currentPhase = "Lost"
+			phaseEndsAt = now() + Config.LostScreenSeconds
+			runState:SetAttribute("LostReason", lostReason or "The light went out.")
+			publish()
+			task.wait(Config.LostScreenSeconds)
+		end
+	end
+end
+
+-- Keep the storm going while predicate() is true, for at most maxSeconds from now
+function StormDirector.HoldStorm(name: string, predicate: () -> boolean, maxSeconds: number)
+	holds[name] = { predicate = predicate, untilTime = now() + maxSeconds }
+end
+
+-- End the current run (the lighthouse fell, or everyone was lost)
+function StormDirector.EndRun(reason: string)
+	if lostReason or currentPhase == "Lost" or currentPhase == "Won" then
+		return
+	end
+	lostReason = reason
+	Remotes.notify(nil, reason, "Alarm")
 end
 
 function StormDirector.Start()
@@ -122,7 +236,8 @@ function StormDirector.Start()
 		return
 	end
 	started = true
-	state = StormState.get()
+	state = SharedState.get("Storm")
+	runState = SharedState.get("Run")
 	phaseChangedRemote = Remotes.event("PhaseChanged")
 	task.spawn(loop)
 end

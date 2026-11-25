@@ -6,30 +6,40 @@
 - [x] HUD: storm number, phase, countdown (scale-based for mobile)
 - [x] FogController: lighting and fog change per phase
 - [x] Greybox island and 3-floor tower (`tools/BuildGreybox.luau`)
+- [x] Rain during warning and storm
 - [ ] Sounds: bell + fog horn at Warning
-- [ ] Rain and wind effects during Storm
 
 ## Week 2: the light
-- [ ] LightService: fuel gauge, drain (3× during storms), safe-circle radius, "is this spot lit?" check
-- [ ] Rotating beam (drawn on clients, server sends the angle); manual aim from the lamp room
-- [ ] Lights-out alarm (15 s)
-- [ ] Fuel gauge on the HUD
-- [ ] Lamp room look and fog visuals
+- [x] LightService: fuel gauge, 3× storm drain, safe-circle radius, "is this spot lit?" check
+- [x] Rotating beam (clients draw it, server sends the angle); manual aim from the lamp room console
+- [x] Lights-out alarm (15 s), then the fog swarms
+- [x] Fuel gauge on the HUD, safe circle drawn as a wall of light
 
 ## Week 3: creatures
-- [ ] Creature models and animations (Blender)
-- [ ] EnemyService: Fog Crawlers spawning at the fog edge, light damage
+- [x] EnemyService: Fog Crawlers spawn at the fog edge, burned by the light, circle its edge, hunt players outside it
+- [x] The Drowned: climb out at Wreck Beach, slowed by light, smash barricades and the tower
+- [x] Creature models and animations in Blender (Fog Crawler, Drowned, Tide Caller)
+- [ ] Upload the Blender models to Roblox and swap them in for the greybox shapes (needs asset upload permission)
 
 ## Week 4: gathering and building
-- [ ] Wreckage spawns, gathering, carrying items
-- [ ] Crafting bench, repairs, barricades
-- [ ] Full loop works with 2 players
+- [x] Physical items you carry one at a time; wreckage after every storm; supply crates
+- [x] Chop pines, fish at tide pools and the dock (storm 5+)
+- [x] Shared storage, refuel the lamp, eat fish
+- [x] Floor health (ground / bunk / lamp room) with effects; hammer repairs; barricades
+- [ ] Playtest a full loop with 2 players
 
 ## Week 5: content and saving
-- [ ] The Drowned, Tide Caller boss (storm 10)
-- [ ] Storms 1–20 tuning, badges at storms 10 and 20
-- [ ] DataService (session locking, retries), RunSaveService
+- [x] Tide Caller boss on every 10th storm (beam on its eyes; storm holds until it's beaten)
+- [x] Run loss (tower falls or everyone is lost) and a fresh run
+- [x] DataService: Keeper Level (XP), best storm, session locking, retries, autosave
+- [ ] Badges at storms 10 and 20: create them on the Creator Hub, paste the IDs into `Config.Progress.Badges`
+- [ ] Storms 1–20 tuning from playtests
 
 ## Week 6: ship
-- [ ] Mobile controls, bug fixes, playtests
+- [ ] Mobile playtest (Device Simulator), bug fixes
 - [ ] Icon and thumbnails, publish
+
+## Known limits / later
+- Creatures walk straight lines with ramp waypoints, not PathfindingService. Fine for this island; revisit if the map gets more complex.
+- No Lost Soul ghost or lantern revive yet (dead players wait for dawn).
+- Special storms: Red Tide and Calm Night change spawns; Silent Fog and Ghost Ship are labels only for now.

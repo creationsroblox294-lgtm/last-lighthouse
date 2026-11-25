@@ -4,7 +4,7 @@
 -- paste this whole file in and press Enter.
 -- It deletes and rebuilds Workspace.Map, so it is safe to run again.
 --
--- Layout (1 stud = 1 unit, sea level y = 0):
+-- Layout (1 stud = 1 unit, sea level y = 0; island ground is terrain):
 --   Lighthouse cliff  north-east  (55, 35, -80)  tower on top, ramp down to the south
 --   Pine grove        west        (-70, 5, -20)
 --   Wreck Beach       south-west  (-95, 3, 95)
@@ -111,9 +111,11 @@ terrain:Clear()
 terrain:FillBlock(CFrame.new(0, -30, 0), Vector3.new(1200, 12, 1200), M.Sand) -- seabed
 terrain:FillBlock(CFrame.new(0, -12, 0), Vector3.new(1200, 24, 1200), M.Water) -- surface at y = 0
 
-local island = folder("Island", map)
-cylinder(island, "Beach", 8, 300, Vector3.new(0, -1, 0), C.sand, M.Sand) -- top y = 3
-cylinder(island, "Grass", 6, 220, Vector3.new(-10, 2, -15), C.grass, M.Grass) -- top y = 5
+-- Island ground is terrain, so the beach-to-grass edge is a smooth slope that players
+-- and creatures can walk up (a 2-stud part ledge blocked them).
+folder("Island", map)
+terrain:FillCylinder(CFrame.new(0, -1, 0), 8, 150, M.Sand) -- beach, top y = 3
+terrain:FillCylinder(CFrame.new(-10, 2, -15), 6, 110, M.Grass) -- grass, top y = ~5
 
 ---------------------------------------------------------------------------
 -- Lighthouse cliff + ramp
@@ -126,8 +128,8 @@ part(cliff, "CliffRockB", Vector3.new(26, 22, 30), CFrame.new(20, 6, -110) * CFr
 local ramp = Instance.new("WedgePart")
 ramp.Name = "Ramp"
 ramp.Anchored = true
-ramp.Size = Vector3.new(16, 30, 80)
-ramp.CFrame = CFrame.new(55, 20, 5) * CFrame.Angles(0, math.rad(180), 0)
+ramp.Size = Vector3.new(16, 30, 92) -- reaches the cliff face (z = -45) with no gap
+ramp.CFrame = CFrame.new(55, 20, 1) * CFrame.Angles(0, math.rad(180), 0)
 ramp.Color = C.rock
 ramp.Material = M.Slate
 ramp.Parent = cliff

@@ -1,6 +1,6 @@
 --!strict
 -- Names every RemoteEvent in one place. The server creates them; clients wait for them.
--- Add new remotes to EVENT_NAMES.
+-- Add new remotes to EVENT_NAMES. The server validates everything a client sends.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -8,6 +8,10 @@ local RunService = game:GetService("RunService")
 local FOLDER_NAME = "Remotes"
 local EVENT_NAMES = {
 	"PhaseChanged", -- server -> client: (info: Types.PhaseInfo)
+	"Notify", -- server -> client: (text: string, kind: string?)
+	"DropItem", -- client -> server: ()
+	"AimBeam", -- client -> server: (angleDegrees: number)
+	"ReleaseBeam", -- client -> server: ()
 }
 
 local Remotes = {}
@@ -38,6 +42,16 @@ function Remotes.event(name: string): RemoteEvent
 		return remote
 	end
 	error(`Unknown RemoteEvent: {name}`)
+end
+
+-- Server helper: message for one player (or everyone when player is nil)
+function Remotes.notify(player: Player?, text: string, kind: string?)
+	local remote = Remotes.event("Notify")
+	if player then
+		remote:FireClient(player, text, kind)
+	else
+		remote:FireAllClients(text, kind)
+	end
 end
 
 return Remotes
