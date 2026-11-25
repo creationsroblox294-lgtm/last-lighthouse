@@ -32,6 +32,11 @@ type Enemy = {
 	lastAttack: number,
 	stunnedUntil: number,
 	orbit: number,
+	anim: string,
+	animSpeed: number,
+	attackUntil: number,
+	flinchUntil: number,
+	flinchCooldown: number,
 }
 
 local enemies: { Enemy } = {}
@@ -70,6 +75,7 @@ end
 local function newBody(name: string, pos: Vector3, rootSize: Vector3, hipHeight: number, stats: any): (Model, Humanoid, BasePart)
 	local model = Instance.new("Model")
 	model.Name = name
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic -- body and mesh arrive together
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
 	root.Size = rootSize
@@ -91,8 +97,46 @@ local function newBody(name: string, pos: Vector3, rootSize: Vector3, hipHeight:
 	return model, humanoid, root
 end
 
+-- Realistic model from Blender (ReplicatedStorage.CreatureModels.<kind>), welded to the
+-- invisible humanoid root so physics/AI stay simple. Returns false if no model is available.
+local function attachVisual(model: Model, root: BasePart, kind: string, groundOffset: number): boolean
+	local folder = ReplicatedStorage:FindFirstChild("CreatureModels")
+	local template = folder and folder:FindFirstChild(kind)
+	if not template or not template:IsA("Model") then
+		return false
+	end
+	local visual = template:Clone()
+	visual.Name = "Visual"
+	local box, size = visual:GetBoundingBox()
+	local pivotFromBox = box:ToObjectSpace(visual:GetPivot())
+	local groundY = root.Position.Y - groundOffset
+	local target = CFrame.new(root.Position.X, groundY + size.Y / 2, root.Position.Z) * root.CFrame.Rotation
+	visual:PivotTo(target * pivotFromBox)
+	for _, d in visual:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = false
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+			d.Massless = true
+			local w = Instance.new("WeldConstraint")
+			w.Part0 = root
+			w.Part1 = d
+			w.Parent = d
+		end
+	end
+	visual.Parent = model
+	model:SetAttribute("Creature", kind)
+	model:SetAttribute("Anim", "Idle")
+	model:SetAttribute("AnimSpeed", 1)
+	return true
+end
+
 local function buildCrawler(pos: Vector3): (Model, Humanoid, BasePart)
 	local model, humanoid, root = newBody("FogCrawler", pos, Vector3.new(2.5, 1.4, 2.5), 2.2, E.FogCrawler)
+	if attachVisual(model, root, "FogCrawler", 2.2 + 0.7) then
+		return model, humanoid, root
+	end
 	weld(root, piece(Vector3.new(3.2, 3.2, 3.2), Color3.fromRGB(18, 18, 24), Enum.Material.SmoothPlastic, Enum.PartType.Ball), CFrame.new(0, -0.6, 0))
 	for _, x in { -0.6, 0.6 } do
 		weld(root, piece(Vector3.new(0.5, 0.5, 0.5), Color3.fromRGB(255, 60, 60), Enum.Material.Neon, Enum.PartType.Ball), CFrame.new(x, -0.2, -1.4))
@@ -169,6 +213,21 @@ local function removeEnemy(e: Enemy)
 	if index then
 		table.remove(enemies, index)
 	end
+	if e.model:GetAttribute("Creature") then
+		-- play the death animation, then sink away
+		e.model:SetAttribute("AnimSpeed", 1)
+		e.model:SetAttribute("Anim", "Death")
+		e.humanoid.WalkSpeed = 0
+		task.delay(2.2, function()
+			for _, d in e.model:GetDescendants() do
+				if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+					d.Transparency = 0.5
+				end
+			end
+		end)
+		Debris:AddItem(e.model, 3)
+		return
+	end
 	for _, d in e.model:GetDescendants() do
 		if d:IsA("BasePart") then
 			d.Transparency = math.max(d.Transparency, 0.6)
@@ -205,6 +264,11 @@ function EnemyService.Spawn(kind: string): Enemy?
 		lastAttack = 0,
 		stunnedUntil = 0,
 		orbit = math.atan2(root.Position.Z - c.Z, root.Position.X - c.X),
+		anim = "Idle",
+		animSpeed = 1,
+		attackUntil = 0,
+		flinchUntil = 0,
+		flinchCooldown = 0,
 	}
 	humanoid.Died:Connect(function()
 		removeEnemy(e)
@@ -333,6 +397,10 @@ local function crawlerThink(e: Enemy, dt: number, t: number)
 	local pos = e.root.Position
 	local swarming = LightService.IsSwarming()
 	if LightService.IsPointLit(pos) then
+		if t >= e.flinchCooldown then
+			e.flinchUntil = t + 0.6
+			e.flinchCooldown = t + 1.6
+		end
 		e.humanoid:TakeDamage(e.stats.LightDamagePerSecond * dt)
 		local c = LightService.GetCenter()
 		local out = Vector3.new(pos.X - c.X, 0, pos.Z - c.Z)
@@ -347,6 +415,9 @@ local function crawlerThink(e: Enemy, dt: number, t: number)
 		if target.distance <= e.stats.AttackRange then
 			if ready(e, t) then
 				target.humanoid:TakeDamage(e.stats.Damage)
+				e.attackUntil = t + 0.9
+				-- restart the strike animation for every bite
+				e.model:SetAttribute("AnimRestart", (e.model:GetAttribute("AnimRestart") or 0) + 1)
 			end
 			e.humanoid:MoveTo(target.root.Position)
 		elseif not hitBarricade(e, t) then
@@ -380,6 +451,35 @@ local function drownedThink(e: Enemy, _dt: number, t: number)
 	attackTower(e, t)
 end
 
+-- Which Blender clip should this creature play right now?
+local CRAWL_STUDS_PER_SECOND = 2.5 -- ground speed the crawl cycle was animated at
+local function updateAnim(e: Enemy, t: number)
+	if not e.model:GetAttribute("Creature") then
+		return
+	end
+	local anim, speed = "Idle", 1
+	if t < e.flinchUntil then
+		anim = "Flinch"
+	elseif t < e.attackUntil then
+		anim = "Lunge"
+	else
+		local v = e.root.AssemblyLinearVelocity
+		local flat = Vector3.new(v.X, 0, v.Z).Magnitude
+		if flat > 1.5 then
+			anim = "Crawl"
+			speed = math.clamp(flat / CRAWL_STUDS_PER_SECOND, 0.6, 4.5)
+		end
+	end
+	if anim ~= e.anim then
+		e.anim = anim
+		e.model:SetAttribute("Anim", anim)
+	end
+	if math.abs(speed - e.animSpeed) > 0.15 then
+		e.animSpeed = speed
+		e.model:SetAttribute("AnimSpeed", speed)
+	end
+end
+
 local function tick(dt: number)
 	local t = os.clock()
 	for i = #enemies, 1, -1 do
@@ -406,6 +506,7 @@ local function tick(dt: number)
 		else
 			crawlerThink(e, dt, t)
 		end
+		updateAnim(e, t)
 	end
 end
 

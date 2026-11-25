@@ -53,4 +53,11 @@ Saving progress needs **Game Settings → Security → Enable Studio Access to A
 
 ## Creature models (Blender)
 
-The creatures are built and animated in Blender (`LastLighthouse_Creatures.blend`, with `FogCrawler.fbx`, `Drowned.fbx` and `TideCaller.fbx` exported next to it, on the Mac that made them, in `~/the-last-lighthouse-assets`). In the game they're still greybox shapes until those models are uploaded to Roblox.
+Creatures are sculpted, textured, rigged and animated in Blender (`LastLighthouse_Creatures_HD.blend` in `~/the-last-lighthouse-assets` on the Mac that made them), then uploaded to Roblox:
+
+- **Model** (FBX, skinned mesh with bones) goes in `ReplicatedStorage.CreatureModels.<Kind>`, with a `SurfaceAppearance` holding the baked colour, normal and roughness maps.
+- **Animation data** goes in `ReplicatedStorage.CreatureAnimData.<Kind>`: a ModuleScript Blender writes with every animated bone's frame per sample. `Shared/CreatureRig` turns it into `Bone.Transform`s once, and `Client/CreatureController` plays it. The server only sets `Anim` / `AnimSpeed` attributes on each creature.
+
+Done so far: **Fog Crawler** (idle, crawl, lunge, flinch, death). The Drowned and the Tide Caller are next; until then they use greybox shapes.
+
+Players ragdoll on death (`Server/Ragdoll`). Ladders in the tower use `Client/LadderController` for a smooth hop on and off at the top.

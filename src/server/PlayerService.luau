@@ -14,6 +14,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local StormDirector = require(script.Parent:WaitForChild("StormDirector"))
 local BuildService = require(script.Parent:WaitForChild("BuildService"))
+local Ragdoll = require(script.Parent:WaitForChild("Ragdoll"))
 
 local PlayerService = {}
 
@@ -69,6 +70,7 @@ local function onDied(player: Player)
 end
 
 local function onCharacter(player: Player, character: Model)
+	task.spawn(Ragdoll.setup, character)
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	if humanoid and humanoid:IsA("Humanoid") then
 		humanoid.Died:Connect(function()
