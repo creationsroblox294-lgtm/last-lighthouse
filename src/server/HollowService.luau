@@ -145,7 +145,7 @@ local function spawnAt(p: Vector3)
 	end
 	-- ground-relative pivot: feet on the ground, centred
 	local box, size = v:GetBoundingBox()
-	local groundCF = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
+	local groundCF = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0)) * box.Rotation -- keep the model's own facing (its pivot looks forward)
 	pivotFromGround = groundCF:ToObjectSpace(v:GetPivot())
 	v.Parent = m
 	m:SetAttribute("Creature", "Hollow")

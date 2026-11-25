@@ -54,7 +54,74 @@ local function part(parent: Instance, size: Vector3, cf: CFrame, color: Color3, 
 	return p
 end
 
+local hd = false -- true when the Blender model is used (it animates its own rise and sink)
+
+local function setAnim(name: string, speed: number?, restart: boolean?)
+	local m = model
+	if not m or not hd then
+		return
+	end
+	m:SetAttribute("AnimSpeed", speed or 1)
+	m:SetAttribute("Anim", name)
+	if restart then
+		m:SetAttribute("AnimRestart", ((m:GetAttribute("AnimRestart") or 0) :: number) + 1)
+	end
+end
+
+-- Realistic sculpted model from Blender (ReplicatedStorage.CreatureModels.TideCaller)
+local function buildHD(template: Model): Model
+	local base = Config.World.BossPosition
+	local m = Instance.new("Model")
+	m.Name = "TideCaller"
+	m.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	local v = template:Clone()
+	v.Name = "Visual"
+	for _, d in v:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+		end
+	end
+	local box, size = v:GetBoundingBox()
+	local bottom = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0)) * box.Rotation -- pivot looks forward
+	local pivotFromBottom = bottom:ToObjectSpace(v:GetPivot())
+	-- about 30% of the body sits below the waterline; it faces the lighthouse (+Z)
+	local studsPerMetre = size.Y / 12.3
+	local waterBottom = Vector3.new(base.X, base.Y - size.Y * 0.3, base.Z)
+	v:PivotTo(CFrame.lookAt(waterBottom, waterBottom + Vector3.new(0, 0, 1)) * pivotFromBottom)
+	v.Parent = m
+	local body = v:FindFirstChild("Body")
+	m.PrimaryPart = if body and body:IsA("BasePart") then body else nil
+	table.clear(eyes)
+	for _, x in { -0.85, 0.85 } do
+		local eye = part(m, Vector3.new(4, 4, 4), CFrame.new(base + Vector3.new(x * studsPerMetre, 6.9 * studsPerMetre - size.Y * 0.3 + 3.7 * studsPerMetre, 2.4 * studsPerMetre)), EYE_COLOR, Enum.Material.Neon, Enum.PartType.Ball)
+		eye.Name = "Eye"
+		eye.Transparency = 1
+		local glow = Instance.new("PointLight")
+		glow.Name = "EyeGlow"
+		glow.Color = EYE_COLOR
+		glow.Range = 40
+		glow.Brightness = 3
+		glow.Parent = eye
+		table.insert(eyes, eye)
+	end
+	m:SetAttribute("Creature", "TideCaller")
+	m:SetAttribute("Anim", "Rise")
+	m:SetAttribute("AnimSpeed", 0.35)
+	local runtime = Workspace:FindFirstChild("Runtime")
+	m.Parent = (runtime and runtime:FindFirstChild("Enemies")) or runtime or Workspace
+	return m
+end
+
 local function build(): Model
+	local folder = ReplicatedStorage:FindFirstChild("CreatureModels")
+	local template = folder and folder:FindFirstChild("TideCaller")
+	hd = template ~= nil and template:IsA("Model")
+	if hd then
+		return buildHD(template :: Model)
+	end
 	local m = Instance.new("Model")
 	m.Name = "TideCaller"
 	local base = Config.World.BossPosition
@@ -99,7 +166,13 @@ local function despawn(sink: boolean)
 	local m = model
 	model = nil
 	if m then
-		if sink then
+		if sink and hd then
+			m:SetAttribute("AnimSpeed", 0.5)
+			m:SetAttribute("Anim", "Sink")
+			task.delay(4.2, function()
+				m:Destroy()
+			end)
+		elseif sink then
 			task.spawn(function()
 				move(m, SUNK, 4)
 				m:Destroy()
@@ -133,9 +206,17 @@ local function spawnBoss()
 	StormDirector.HoldStorm("TideCaller", function()
 		return active
 	end, TC.MaxStormSeconds)
-	task.spawn(function()
-		move(m, -SUNK, 6)
-	end)
+	if hd then
+		task.delay(5.8, function()
+			if model == m and active then
+				setAnim("Idle", 1)
+			end
+		end)
+	else
+		task.spawn(function()
+			move(m, -SUNK, 6)
+		end)
+	end
 end
 
 local function tick(dt: number)
@@ -152,6 +233,15 @@ local function tick(dt: number)
 	end
 	for _, eye in eyes do
 		eye.Color = if hit then Color3.new(1, 1, 1) else EYE_COLOR
+		local glow = eye:FindFirstChild("EyeGlow")
+		if glow and glow:IsA("PointLight") then
+			glow.Color = eye.Color
+		end
+	end
+	if hit and t >= stunnedUntil then
+		setAnim("Recoil", 1, true) -- flinches each time a new beam hit lands
+	elseif not hit and t >= stunnedUntil and model and model:GetAttribute("Anim") == "Recoil" then
+		setAnim("Idle", 1)
 	end
 	if hit then
 		health -= TC.EyeBeamDamagePerSecond * dt
@@ -170,6 +260,12 @@ local function tick(dt: number)
 			LightService.DrainFuel(TC.WaveFuelDrain)
 			BuildService.DamageFloor("LampRoom", TC.WaveTowerDamage)
 			Remotes.notify(nil, "A huge wave crashes into the lighthouse!", "Wave")
+			setAnim("Slam", 1, true)
+			task.delay(1.6, function()
+				if active and os.clock() >= stunnedUntil then
+					setAnim("Idle", 1)
+				end
+			end)
 		end
 	end
 end
