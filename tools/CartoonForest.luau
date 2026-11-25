@@ -9,9 +9,9 @@
 --   if g then F.pine(g, rng).Parent = workspace.Map.PineGrove end
 local F = {}
 local WOOD = {Color3.fromRGB(96, 66, 44), Color3.fromRGB(84, 58, 40), Color3.fromRGB(104, 74, 50)}
-local PINE = {Color3.fromRGB(42, 88, 50), Color3.fromRGB(36, 78, 46), Color3.fromRGB(50, 98, 56), Color3.fromRGB(46, 84, 44)}
-local LEAF = {Color3.fromRGB(78, 132, 58), Color3.fromRGB(66, 120, 52), Color3.fromRGB(90, 142, 64)}
-local BUSH = {Color3.fromRGB(58, 112, 52), Color3.fromRGB(70, 124, 56), Color3.fromRGB(50, 100, 48), Color3.fromRGB(82, 134, 60)}
+local PINE = {Color3.fromRGB(30, 64, 36), Color3.fromRGB(26, 56, 33), Color3.fromRGB(36, 70, 40), Color3.fromRGB(33, 60, 32)}
+local LEAF = {Color3.fromRGB(48, 84, 36), Color3.fromRGB(41, 75, 32), Color3.fromRGB(56, 88, 40)}
+local BUSH = {Color3.fromRGB(44, 84, 39), Color3.fromRGB(52, 93, 42), Color3.fromRGB(38, 75, 36), Color3.fromRGB(61, 100, 45)}
 
 local function pick(rng, t) return t[rng:NextInteger(1, #t)] end
 local function shade(c, rng, a) local k = 1 + rng:NextNumber(-a, a) return Color3.new(math.clamp(c.R*k,0,1), math.clamp(c.G*k,0,1), math.clamp(c.B*k,0,1)) end

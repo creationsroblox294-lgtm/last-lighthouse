@@ -38,13 +38,13 @@ Config.SpecialStorms = { "SilentFog", "RedTide", "GhostShip", "CalmNight" }
 Config.World = {
 	IslandCenter = Vector3.new(0, 3, 170), -- the island was doubled in size toward the south
 	IslandRadius = 310,
-	TowerCenter = Vector3.new(55, 5.8, -80), -- base of the tower, on the meadow (no cliff any more)
-	LampPosition = Vector3.new(55, 94.4, -80),
-	RampBottom = Vector3.new(55, 6, -40), -- path in front of the door (supply drops land here)
-	RampTop = Vector3.new(55, 7, -56),
-	DoorFront = Vector3.new(55, 7.3, -68),
+	TowerCenter = Vector3.new(-10, 6.8, 150), -- base of the tower, in the middle of the island
+	LampPosition = Vector3.new(-10, 95.4, 150),
+	RampBottom = Vector3.new(-10, 7, 190), -- path in front of the door (supply drops land here)
+	RampTop = Vector3.new(-10, 8, 174),
+	DoorFront = Vector3.new(-10, 8.3, 162),
 	CliffTopY = 1000, -- no cliff: disables the old ramp routing
-	BossPosition = Vector3.new(55, 0, -190),
+	BossPosition = Vector3.new(40, 0, -150), -- open sea north of the tower, clear of the dock
 }
 
 ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ Config.Light = {
 	MinRadiusFraction = 0.45, -- radius when the tank is nearly empty
 	LowFuelFraction = 0.25,
 	LightsOutGrace = 15, -- seconds of alarm before creatures swarm
-	BeamRange = 130,
+	BeamRange = 320, -- the tower is inland now: the beam has to reach the sea
 	BeamDegreesPerSecond = 40,
 	BeamHalfWidthDegrees = 7,
 	BeamDamagePerSecond = 20,
@@ -196,6 +196,29 @@ Config.Resources = {
 	CookSeconds = 1.5, -- hold time at the fireplace
 	CarryWalkSpeed = 12,
 	WalkSpeed = 16,
+}
+
+-- Snakes, spiders and bats that drop out of the trees (TreeAnimalService)
+Config.TreeAnimals = {
+	FirstDelay = 40, -- seconds after joining before the first one
+	MinInterval = 25, -- per player, between attempts
+	MaxInterval = 50,
+	TreeSearchRadius = 28, -- a tree this close to the player is needed
+	SafeRadius = 45, -- none in the lighthouse yard
+	LatchedWalkSpeed = 9,
+	FleeDistance = 22,
+	FleeSeconds = 2.5,
+	Kinds = {
+		Snake = { Weight = 3, WarnSeconds = 1.2, DropSeconds = 0.55, CatchRadius = 3.2, PerchOut = 2, DamagePerSecond = 6, LatchSeconds = 6, Shakes = 8 },
+		Spider = { Weight = 3, WarnSeconds = 1.0, DropSeconds = 0.45, CatchRadius = 3.0, PerchOut = 1.5, DamagePerSecond = 5, LatchSeconds = 5, Shakes = 6 },
+		Bat = { Weight = 2, WarnSeconds = 0.9, DropSeconds = 0.7, CatchRadius = 3.5, PerchOut = 3, DamagePerSecond = 4, LatchSeconds = 5, Shakes = 6 },
+	},
+}
+
+-- Forage plants (Map.Forage): pick and eat on the spot
+Config.Forage = {
+	Heal = { Carrot = 12, Berries = 8, Apple = 12, Mushroom = 6, Pumpkin = 18 },
+	RegrowSeconds = 90,
 }
 
 ---------------------------------------------------------------------------

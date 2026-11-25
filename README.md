@@ -120,3 +120,23 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
 - Brighter days: Calm/Dawn/Won looks raise Brightness and add `Exposure`
   (ExposureCompensation), with thinner fog. Lighting style is Soft; grass is shorter and
   a softer green.
+
+### Island v4 (tower in the middle, wild coast, forage, tree animals)
+- The lighthouse stands in a clearing in the middle of the island at (-10, 8, 150).
+  `Config.Light.BeamRange` is 320 so the beam still reaches the sea; the Tide Caller
+  rises north of the island at (40, 0, -150).
+- Coastline: `tools/IslandShape.luau` adds peninsulas, bays and wobble (wreck beach, tide
+  pools and the dock keep their shore).
+- Darker pines/bushes; more trees on the new land.
+- Stairs: every spiral flight has an invisible `SmoothRamp` (walk up without catching on
+  steps) and `StairService` adds **Go up / Go down** prompts (F) at each end.
+- Forage (`Map.Forage`, `ForageService`): carrot patches, berry bushes, apple trees,
+  mushrooms, pumpkins. Hold E to pick and eat (heals, regrows after 90 s). Flowers, rocks
+  and fallen logs in `Map.Meadow`. Built by `tools/Vegetation.luau`.
+- Tree animals (`TreeAnimalService` + `TreeAnimalController`): snakes, spiders and bats
+  hide in pines near players away from the lighthouse. The tree rustles and a red ring
+  marks where it lands; step out to dodge. If it lands on you it latches on (damage,
+  slowed, shaky screen) until you tap Space/screen enough times. Studio test: set the
+  `DebugAnimalsFast` attribute on Workspace. Models: `ReplicatedStorage.CreatureModels.
+  Snake / Spider / Bat` with clips Hang, Drop, Latch, Land, Flee (block stand-ins are used
+  until they exist).
