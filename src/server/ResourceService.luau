@@ -316,8 +316,14 @@ end
 local function setVisible(model: Instance, visible: boolean)
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
-			d.Transparency = if visible then 0 else 0.85
-			d.CanCollide = visible
+			-- remember each part's own look so invisible collision parts and leaf cards stay correct
+			if d:GetAttribute("BaseTransparency") == nil then
+				d:SetAttribute("BaseTransparency", d.Transparency)
+				d:SetAttribute("BaseCollide", d.CanCollide)
+			end
+			local baseT = d:GetAttribute("BaseTransparency") :: number
+			d.Transparency = if visible then baseT else 1 - (1 - baseT) * 0.15
+			d.CanCollide = visible and (d:GetAttribute("BaseCollide") :: boolean)
 		end
 	end
 end
@@ -329,7 +335,7 @@ local function setupGathering(map: Instance)
 			local trunk = tree:FindFirstChild("Trunk")
 			if tree:IsA("Model") and trunk and trunk:IsA("BasePart") then
 				local prompt: ProximityPrompt
-				prompt = addPrompt(trunk, "Chop", "Pine tree", 1.2, function(player)
+				prompt = addPrompt(trunk, "Chop", "Tree", 1.2, function(player)
 					if give(player, "Wood") then
 						prompt.Enabled = false
 						setVisible(tree, false)

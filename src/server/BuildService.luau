@@ -39,7 +39,7 @@ local FLOOR_LABEL = { GroundFloor = "ground floor", BunkRoom = "bunk room", Lamp
 
 local SLOTS = {
 	{ name = "RampBarricade", cf = CFrame.new(55, 36.5, -48), size = Vector3.new(16, 3, 1.5) },
-	{ name = "DoorBarricade", cf = CFrame.new(55, 36.5, -63), size = Vector3.new(10, 3, 1.5) },
+	{ name = "DoorBarricade", cf = CFrame.new(55, 37.3, -66.9), size = Vector3.new(10, 3, 1.5) },
 }
 
 local function paintFloor(name: string)

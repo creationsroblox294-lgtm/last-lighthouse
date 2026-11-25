@@ -41,7 +41,7 @@ Config.World = {
 	LampPosition = Vector3.new(55, 75, -80),
 	RampBottom = Vector3.new(55, 6, 48),
 	RampTop = Vector3.new(55, 36, -50),
-	DoorFront = Vector3.new(55, 36, -62),
+	DoorFront = Vector3.new(55, 36.5, -68),
 	CliffTopY = 35,
 	BossPosition = Vector3.new(55, 0, -190),
 }
