@@ -80,8 +80,11 @@ function LadderController.Start()
 				continue
 			end
 			-- Climbing up and reached the top: step off onto the floor
-			if state == Enum.HumanoidStateType.Climbing and moving and localPos.Y > halfY - 3.4 and localPos.Z < 0.5 and localPos.Z > -4 then
-				local target = truss.CFrame * CFrame.new(0, halfY + 3.0, 3.4)
+			if state == Enum.HumanoidStateType.Climbing and moving and localPos.Y > halfY - 3.4 and localPos.Y < halfY + 1.5
+				and localPos.Z < 0.5 and localPos.Z > -4 then
+				-- a ladder can ask for a shorter step-off (e.g. next to the lamp pedestal)
+				local stepOff = truss:GetAttribute("StepOff")
+				local target = truss.CFrame * CFrame.new(0, halfY + 3.0, if typeof(stepOff) == "number" then stepOff else 3.4)
 				local facing = CFrame.lookAt(target.Position, target.Position + (-truss.CFrame.LookVector * Vector3.new(1, 0, 1)))
 				hop(root, humanoid, facing, function()
 					humanoid:ChangeState(Enum.HumanoidStateType.Running)

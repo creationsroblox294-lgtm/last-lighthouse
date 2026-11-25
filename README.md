@@ -128,8 +128,6 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
 - Coastline: `tools/IslandShape.luau` adds peninsulas, bays and wobble (wreck beach, tide
   pools and the dock keep their shore).
 - Darker pines/bushes; more trees on the new land.
-- Stairs: every spiral flight has an invisible `SmoothRamp` (walk up without catching on
-  steps) and `StairService` adds **Go up / Go down** prompts (F) at each end.
 - Forage (`Map.Forage`, `ForageService`): carrot patches, berry bushes, apple trees,
   mushrooms, pumpkins. Hold E to pick and eat (heals, regrows after 90 s). Flowers, rocks
   and fallen logs in `Map.Meadow`. Built by `tools/Vegetation.luau`.
@@ -145,10 +143,12 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   Bat 97310903063178, Forage plants 86526358719988 (textures: snake 97894312809995,
   spider 111102523044360, bat 75105393405429, forage 86609593311351). Anim data is uploaded
   as a binary .rbxm holding one ModuleScript (Open Cloud refuses .rbxmx).
-- Wider stairs: every spiral flight was rebuilt with a bigger radius by
-  `ServerStorage.WidenStairs` (ground 5.4, bunk room 5.4, shaft 4.8 / 4.3 / 4.3 vs 3.8-4.5
-  before), with bigger stairwells cut in the slabs above, new collision strips, well rails and
-  SmoothRamps. A bed and the Store crate were moved out of the way.
+- Ladders instead of stairs: each level has a wooden ladder against the wall with a railed
+  hatch in the floor above (old stairwells filled in, collision strips rebuilt). Built by
+  `ServerStorage.LadderBuilder`. The invisible TrussPart `ClimbSurface` drives
+  `LadderController`: climb from the wall side, you hop onto the floor at the top; walk into a
+  hatch from above to grab the ladder and hold S to go down. A truss can set a `StepOff`
+  attribute (studs) for a shorter step at the top (the lamp-room ladder uses 2.8).
 - More fish: 21 schools all round the coast (`Map.FishingWaters`); a school part can carry
   `Tint` (Color3) and `Scale` attributes, so schools differ in colour and size (~105 fish).
 - Forage visuals are Blender meshes (carrot, apple, red/blue berries, red/brown mushrooms,
