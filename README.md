@@ -145,5 +145,11 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   Bat 97310903063178, Forage plants 86526358719988 (textures: snake 97894312809995,
   spider 111102523044360, bat 75105393405429, forage 86609593311351). Anim data is uploaded
   as a binary .rbxm holding one ModuleScript (Open Cloud refuses .rbxmx).
+- Wider stairs: every spiral flight was rebuilt with a bigger radius by
+  `ServerStorage.WidenStairs` (ground 5.4, bunk room 5.4, shaft 4.8 / 4.3 / 4.3 vs 3.8-4.5
+  before), with bigger stairwells cut in the slabs above, new collision strips, well rails and
+  SmoothRamps. A bed and the Store crate were moved out of the way.
+- More fish: 21 schools all round the coast (`Map.FishingWaters`); a school part can carry
+  `Tint` (Color3) and `Scale` attributes, so schools differ in colour and size (~105 fish).
 - Forage visuals are Blender meshes (carrot, apple, red/blue berries, red/brown mushrooms,
   pumpkin) kept in `ServerStorage.ForageMeshes`.

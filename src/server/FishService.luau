@@ -31,19 +31,30 @@ local fishes: { Fish } = {}
 local folder: Instance
 local rng = Random.new()
 
-local function schoolCentres(): { Vector3 }
+type School = { centre: Vector3, tint: Color3?, scale: number }
+
+local function schoolCentres(): { School }
 	local map = Workspace:FindFirstChild("Map")
 	local waters = map and map:FindFirstChild("FishingWaters")
-	local list = {}
+	local list: { School } = {}
 	if waters then
 		for _, p in waters:GetChildren() do
 			if p:IsA("BasePart") then
-				table.insert(list, Vector3.new(p.Position.X, 0, p.Position.Z))
+				-- optional attributes on a school part: Tint (Color3), Scale (number)
+				local tint = p:GetAttribute("Tint")
+				local scale = p:GetAttribute("Scale")
+				table.insert(list, {
+					centre = Vector3.new(p.Position.X, 0, p.Position.Z),
+					tint = if typeof(tint) == "Color3" then tint else nil,
+					scale = if typeof(scale) == "number" then scale else 1,
+				})
 			end
 		end
 	end
 	if #list == 0 then
-		list = table.clone(F.Schools)
+		for _, c in F.Schools do
+			table.insert(list, { centre = c, tint = nil, scale = 1 })
+		end
 	end
 	return list
 end
@@ -55,7 +66,8 @@ local function place(f: Fish)
 	f.model:PivotTo(CFrame.lookAt(pos, pos + dir) * f.pivotFix)
 end
 
-local function spawnFish(centre: Vector3): Fish?
+local function spawnFish(school: School): Fish?
+	local centre = school.centre
 	local templates = ReplicatedStorage:FindFirstChild("CreatureModels")
 	local template = templates and templates:FindFirstChild("Fish")
 	if not template or not template:IsA("Model") then
@@ -66,6 +78,18 @@ local function spawnFish(centre: Vector3): Fish?
 	m.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	local v = template:Clone()
 	v.Name = "Visual"
+	if school.scale ~= 1 then
+		v:ScaleTo(v:GetScale() * school.scale * rng:NextNumber(0.85, 1.15))
+	end
+	if school.tint then
+		for _, sa in v:GetDescendants() do
+			if sa:IsA("SurfaceAppearance") then
+				pcall(function()
+					(sa :: any).Color = school.tint
+				end)
+			end
+		end
+	end
 	for _, d in v:GetDescendants() do
 		if d:IsA("BasePart") then
 			d.Anchored = true
@@ -144,9 +168,9 @@ function FishService.Start()
 	end
 	folder = enemies :: Instance
 
-	for _, centre in schoolCentres() do
+	for _, school in schoolCentres() do
 		for _ = 1, F.PerSchool do
-			local f = spawnFish(centre)
+			local f = spawnFish(school)
 			if f then
 				table.insert(fishes, f)
 			end
