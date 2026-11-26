@@ -269,13 +269,13 @@ local function consume(player: Player): string?
 	return carry.kind
 end
 
-function ResourceService.DropCarried(player: Player)
+function ResourceService.DropCarried(player: Player, at: Vector3?)
 	local carry = carrying[player]
 	if not carry then
 		return
 	end
 	local root = rootOf(player)
-	local pos = if root then (root.CFrame * CFrame.new(0, 0, -3)).Position else carry.item.Position
+	local pos = at or if root then (root.CFrame * CFrame.new(0, 0, -3)).Position else carry.item.Position
 	consume(player)
 	ResourceService.SpawnItem(carry.kind, pos)
 end

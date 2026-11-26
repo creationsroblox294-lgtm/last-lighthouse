@@ -401,7 +401,32 @@ add({
 })
 
 ----------------------------------------------------------------- Moderate
-planned("Gale", "Gale", "Moderate", "The barometer is dropping fast. Wind incoming.", "Gale! Hold on to what you carry.")
+add({
+	Id = "Gale",
+	Name = "Gale",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "The barometer is dropping fast. Wind incoming.",
+	Blurb = "Gale! The wind is throwing debris across the island. Hold on to what you carry and stay out of the open.",
+	Color = Color3.fromRGB(150, 185, 170),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 1,
+	-- a howling slate-green storm (Storms/Gale throws the debris and snatches loads; StormFX/Gale draws it and leans on you)
+	Look = {
+		ClockTime = 15.5,
+		Brightness = 1.5,
+		Exposure = -0.05,
+		Ambient = Color3.fromRGB(105, 120, 115),
+		FogDensity = 0.36,
+		FogHaze = 1.8,
+		FogColor = Color3.fromRGB(120, 135, 130),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Streak = "rbxassetid://134764319364715",
+		Leaf = "rbxassetid://105999470506423",
+	},
+})
 planned("Thunderhead", "Thunderhead", "Moderate", "A towering cloud is building.", "Thunderhead! Lightning everywhere.")
 planned("HighTide", "High Tide", "Moderate", "The sea is swelling.", "High Tide! The water is rising.")
 planned("SilentFog", "Silent Fog", "Moderate", "Everything has gone very quiet.", "Silent Fog.")
