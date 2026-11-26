@@ -371,7 +371,34 @@ add({
 		Sheet = "rbxassetid://94100520771589",
 	},
 })
-planned("RollingThunder", "Rolling Thunder", "Mild", "Distant thunder.", "Rolling Thunder: watch for strikes.")
+add({
+	Id = "RollingThunder",
+	Name = "Rolling Thunder",
+	Tier = "Mild",
+	Built = true,
+	Forecast = "Distant thunder.",
+	Blurb = "Rolling Thunder! When the air around you starts to crackle, MOVE. The strikes set the ground on fire.",
+	Color = Color3.fromRGB(255, 170, 130),
+	DrainMultiplier = 2.6,
+	EnemyMultiplier = 0.8,
+	-- a bruised purple-and-orange dusk (Storms/RollingThunder aims the strikes; StormFX/RollingThunder draws them)
+	Look = {
+		ClockTime = 18.4,
+		Brightness = 1.8,
+		Exposure = 0.1,
+		Ambient = Color3.fromRGB(130, 100, 115),
+		FogDensity = 0.32,
+		FogHaze = 1.8,
+		FogColor = Color3.fromRGB(170, 115, 120),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Spark = "rbxassetid://124288772478718",
+		Mote = "rbxassetid://72567132198596",
+		Flame = "rbxassetid://70612468476990",
+		Smoke = "rbxassetid://79085558579719",
+	},
+})
 
 ----------------------------------------------------------------- Moderate
 planned("Gale", "Gale", "Moderate", "The barometer is dropping fast. Wind incoming.", "Gale! Hold on to what you carry.")
