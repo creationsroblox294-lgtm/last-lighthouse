@@ -9,6 +9,7 @@ local CreatureController = require(script.Parent:WaitForChild("CreatureControlle
 local LadderController = require(script.Parent:WaitForChild("LadderController"))
 local HollowController = require(script.Parent:WaitForChild("HollowController"))
 local TreeAnimalController = require(script.Parent:WaitForChild("TreeAnimalController"))
+local PunchController = require(script.Parent:WaitForChild("PunchController"))
 
 FogController.Start()
 LightController.Start()
@@ -18,3 +19,4 @@ CreatureController.Start()
 LadderController.Start()
 HollowController.Start()
 TreeAnimalController.Start()
+PunchController.Start()

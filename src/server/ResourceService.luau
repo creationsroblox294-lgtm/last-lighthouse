@@ -198,6 +198,37 @@ local function give(player: Player, kind: string): boolean
 	return true
 end
 
+-- Public: one punch on a tree. Every R.PunchesPerTree punches gives a piece of wood;
+-- the tree then disappears and grows back. Returns "hit", "wood", "full" or nil.
+function ResourceService.HitTree(player: Player, tree: Model): string?
+	if tree:GetAttribute("Felled") == true then
+		return nil
+	end
+	local hits = ((tree:GetAttribute("Hits") :: number?) or 0) + 1
+	if hits < R.PunchesPerTree then
+		tree:SetAttribute("Hits", hits)
+		return "hit"
+	end
+	if carrying[player] then
+		Remotes.notify(player, "Your hands are full. Drop or use what you're carrying first.", nil)
+		tree:SetAttribute("Hits", R.PunchesPerTree - 1)
+		return "full"
+	end
+	if not give(player, "Wood") then
+		return nil
+	end
+	tree:SetAttribute("Hits", 0)
+	tree:SetAttribute("Felled", true)
+	setVisible(tree, false)
+	task.delay(R.TreeRegrowSeconds, function()
+		if tree.Parent then
+			setVisible(tree, true)
+			tree:SetAttribute("Felled", false)
+		end
+	end)
+	return "wood"
+end
+
 -- Public: hand a fresh item to the player (FishService uses this)
 function ResourceService.Give(player: Player, kind: string): boolean
 	return give(player, kind)
@@ -370,22 +401,14 @@ local function setVisible(model: Instance, visible: boolean)
 end
 
 local function setupGathering(map: Instance)
+	-- trees are punched for wood (PunchService calls ResourceService.HitTree)
 	local grove = map:FindFirstChild("PineGrove")
 	if grove then
 		for _, tree in grove:GetChildren() do
 			local trunk = tree:FindFirstChild("Trunk")
 			if tree:IsA("Model") and trunk and trunk:IsA("BasePart") then
-				local prompt: ProximityPrompt
-				prompt = addPrompt(trunk, "Chop", "Tree", 1.2, function(player)
-					if give(player, "Wood") then
-						prompt.Enabled = false
-						setVisible(tree, false)
-						task.delay(R.TreeRegrowSeconds, function()
-							setVisible(tree, true)
-							prompt.Enabled = true
-						end)
-					end
-				end)
+				tree:SetAttribute("Hits", 0)
+				tree:SetAttribute("Felled", false)
 			end
 		end
 	end

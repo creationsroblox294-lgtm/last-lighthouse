@@ -15,6 +15,8 @@ local EVENT_NAMES = {
 	"Struggle", -- client -> server: () while held by the Hollow
 	"FlareFired", -- server -> client: (position: Vector3) flash effect
 	"AnimalWarn", -- server -> client: (kind: string, tree: Model, landAt: Vector3, seconds: number)
+	"Punch", -- client -> server: () throw a punch
+	"PunchHit", -- server -> client: (position: Vector3, kind: string, target: Instance?)
 }
 
 local Remotes = {}

@@ -76,11 +76,13 @@ Config.Light = {
 ---------------------------------------------------------------------------
 Config.Enemies = {
 	Tick = 0.2,
-	MaxAlive = 40,
-	SpawnInterval = 2.5,
-	SwarmSpawnInterval = 1,
+	MaxAlive = 60,
+	SpawnInterval = 1.6,
+	SwarmSpawnInterval = 0.8,
 	SpawnRadius = 175, -- creatures walk out of the fog this far from the lighthouse
 	PlayerScale = 0.35, -- each extra player adds 35% more creatures (fuel drain doesn't change)
+	-- every storm keeps all the creatures from earlier storms and adds the next kind
+	Order = { "FogCrawler", "Drowned", "NightGull", "FogMimic", "LastKeeper" },
 	FogCrawler = {
 		Health = 30,
 		Speed = 15,
@@ -89,8 +91,8 @@ Config.Enemies = {
 		AttackCooldown = 1,
 		LightDamagePerSecond = 30,
 		FirstStorm = 1,
-		CountBase = 4,
-		CountPerStorm = 0.8,
+		CountBase = 8,
+		CountPerStorm = 1.5,
 	},
 	Drowned = {
 		Health = 140,
@@ -100,15 +102,55 @@ Config.Enemies = {
 		AttackCooldown = 1.5,
 		LightSlowFactor = 0.5,
 		StructureDamage = 12,
-		FirstStorm = 8,
+		FirstStorm = 2,
 		CountBase = 2,
-		CountPerStorm = 0.35,
+		CountPerStorm = 0.5,
+	},
+	NightGull = { -- circles high up, dives at anyone outside the light
+		Health = 40,
+		Speed = 22,
+		Damage = 8,
+		AttackRange = 6,
+		AttackCooldown = 1.2,
+		LightDamagePerSecond = 20,
+		FlyHeight = 16,
+		DiveRange = 40,
+		FirstStorm = 3,
+		CountBase = 3,
+		CountPerStorm = 0.5,
+	},
+	FogMimic = { -- looks like a lost survivor until you get close
+		Health = 70,
+		Speed = 9,
+		RevealSpeed = 20,
+		Damage = 18,
+		AttackRange = 5,
+		AttackCooldown = 1.4,
+		LightDamagePerSecond = 15,
+		RevealRange = 16,
+		FirstStorm = 4,
+		CountBase = 2,
+		CountPerStorm = 0.3,
+	},
+	LastKeeper = { -- a drowned keeper with a lantern: tough, slow, calls crawlers out of the fog
+		Health = 450,
+		Speed = 7,
+		Damage = 28,
+		StructureDamage = 30,
+		AttackRange = 7,
+		AttackCooldown = 2.2,
+		LightSlowFactor = 0.6,
+		SummonEvery = 14,
+		SummonCount = 2,
+		FirstStorm = 5,
+		CountBase = 1,
+		CountPerStorm = 0.2,
 	},
 }
 
 -- The Hollow: a stalker between storms (see HollowService)
 Config.Hollow = {
-	ArrivesAfterStorm = 12, -- first appears at the dawn after storm 12
+	ArrivesAfterStorm = 6, -- first appears after storm 6 (one new threat every storm)
 	MinInterval = 240, -- seconds between appearances
 	MaxInterval = 480,
 	EmergeSeconds = 3,
@@ -158,6 +200,13 @@ Config.Tower = {
 }
 
 Config.Combat = {
+	-- fists: click / tap with nothing in your hands (PunchService)
+	PunchDamage = 12,
+	PunchRange = 6.5,
+	PunchConeDegrees = 60,
+	PunchCooldown = 0.4,
+	-- right / left jab animations (R15), played alternately
+	PunchAnimations = { "rbxassetid://102482521330056", "rbxassetid://136704472801616" },
 	HarpoonDamage = 25,
 	HarpoonRange = 32,
 	HarpoonConeDegrees = 45,
@@ -191,6 +240,7 @@ Config.Resources = {
 	MaxGroundItems = 30,
 	SupplyCrateChance = 0.25,
 	TreeRegrowSeconds = 45,
+	PunchesPerTree = 5, -- punches to knock a piece of wood off a tree
 	FishCooldownSeconds = 15,
 	FishHeal = 35,
 	CookSeconds = 1.5, -- hold time at the fireplace

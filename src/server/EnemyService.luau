@@ -3,8 +3,12 @@
 -- and take damage from the light and the beam.
 --   Fog Crawler (storm 1+): fast swarms. Only attack players outside the light; they circle
 --                           the edge of the light, waiting for it to shrink. Burned inside it.
---   The Drowned (storm 8+): slow and tough. Climb out at Wreck Beach and pound on the walls.
+--   The Drowned (storm 2+): slow and tough. Climb out at Wreck Beach and pound on the walls.
 --                           The light only slows them.
+--   Night Gull  (storm 3+): circles high above and dives at anyone outside the light.
+--   Fog Mimic   (storm 4+): looks like a lost survivor; reveals itself and lunges up close.
+--   Last Keeper (storm 5+): slow and very tough, calls Fog Crawlers out of the fog.
+-- Every storm keeps all the earlier kinds and adds the next (Config.Enemies.Order).
 -- When the lamp has been dark for 15 s (LightService.IsSwarming) everything rushes the tower.
 -- Special storms: Red Tide = twice the Drowned, Calm Night = no creatures.
 
@@ -37,12 +41,13 @@ type Enemy = {
 	attackUntil: number,
 	flinchUntil: number,
 	flinchCooldown: number,
+	data: { [string]: any },
 }
 
 local enemies: { Enemy } = {}
 local folder: Folder
 local rng = Random.new()
-local quota: { [string]: number } = { FogCrawler = 0, Drowned = 0 }
+local quota: { [string]: number } = {}
 local spawnLoopRunning = false
 
 ---------------------------------------------------------------------------
@@ -172,6 +177,35 @@ local function buildDrowned(pos: Vector3): (Model, Humanoid, BasePart)
 	return model, humanoid, root
 end
 
+local function buildGull(pos: Vector3): (Model, Humanoid, BasePart)
+	local stats = E.NightGull
+	local model, humanoid, root = newBody("NightGull", pos, Vector3.new(3, 1, 3), stats.FlyHeight, stats)
+	if attachVisual(model, root, "NightGull", 0.55) then
+		model:SetAttribute("Anim", "Glide")
+		return model, humanoid, root
+	end
+	weld(root, piece(Vector3.new(6, 0.4, 2), Color3.fromRGB(200, 200, 205), Enum.Material.SmoothPlastic), CFrame.new())
+	return model, humanoid, root
+end
+
+local function buildMimic(pos: Vector3): (Model, Humanoid, BasePart)
+	local model, humanoid, root = newBody("FogMimic", pos, Vector3.new(2, 2, 1), 2.2, E.FogMimic)
+	if attachVisual(model, root, "FogMimic", 2.2 + 1) then
+		return model, humanoid, root
+	end
+	weld(root, piece(Vector3.new(1.8, 5, 1), Color3.fromRGB(90, 95, 100), Enum.Material.SmoothPlastic), CFrame.new(0, 0.5, 0))
+	return model, humanoid, root
+end
+
+local function buildKeeper(pos: Vector3): (Model, Humanoid, BasePart)
+	local model, humanoid, root = newBody("LastKeeper", pos, Vector3.new(3, 3, 2), 3, E.LastKeeper)
+	if attachVisual(model, root, "LastKeeper", 3 + 1.5) then
+		return model, humanoid, root
+	end
+	weld(root, piece(Vector3.new(3, 7, 2), Color3.fromRGB(40, 50, 60), Enum.Material.Slate), CFrame.new(0, 1, 0))
+	return model, humanoid, root
+end
+
 ---------------------------------------------------------------------------
 -- Spawning
 ---------------------------------------------------------------------------
@@ -254,7 +288,7 @@ local function removeEnemy(e: Enemy)
 	Debris:AddItem(e.model, 1)
 end
 
-function EnemyService.Spawn(kind: string): Enemy?
+function EnemyService.Spawn(kind: string, at: Vector3?): Enemy?
 	if #enemies >= E.MaxAlive then
 		return nil
 	end
@@ -264,9 +298,15 @@ function EnemyService.Spawn(kind: string): Enemy?
 	end
 	local model, humanoid, root
 	if kind == "Drowned" then
-		model, humanoid, root = buildDrowned(drownedPoint())
+		model, humanoid, root = buildDrowned(at or drownedPoint())
+	elseif kind == "NightGull" then
+		model, humanoid, root = buildGull(at or fogEdgePoint())
+	elseif kind == "FogMimic" then
+		model, humanoid, root = buildMimic(at or fogEdgePoint())
+	elseif kind == "LastKeeper" then
+		model, humanoid, root = buildKeeper(at or fogEdgePoint())
 	else
-		model, humanoid, root = buildCrawler(fogEdgePoint())
+		model, humanoid, root = buildCrawler(at or fogEdgePoint())
 	end
 	model.Parent = folder
 	pcall(function()
@@ -287,6 +327,7 @@ function EnemyService.Spawn(kind: string): Enemy?
 		attackUntil = 0,
 		flinchUntil = 0,
 		flinchCooldown = 0,
+		data = {},
 	}
 	humanoid.Died:Connect(function()
 		removeEnemy(e)
@@ -299,8 +340,7 @@ function EnemyService.ClearAll()
 	for i = #enemies, 1, -1 do
 		removeEnemy(enemies[i])
 	end
-	quota.FogCrawler = 0
-	quota.Drowned = 0
+	table.clear(quota)
 end
 
 local function countFor(stats: any, storm: number, players: number): number
@@ -317,17 +357,23 @@ local function spawnLoop()
 		return
 	end
 	spawnLoopRunning = true
-	local next = "FogCrawler"
+	local idx = 0
 	while StormDirector.GetPhase() == "Storm" do
 		local swarming = LightService.IsSwarming()
-		if quota.FogCrawler > 0 or quota.Drowned > 0 then
-			if quota[next] <= 0 then
-				next = if next == "FogCrawler" then "Drowned" else "FogCrawler"
+		-- next kind (round robin through Order) that still has creatures to send
+		local kind: string? = nil
+		for _ = 1, #E.Order do
+			idx = idx % #E.Order + 1
+			local k = E.Order[idx]
+			if (quota[k] or 0) > 0 then
+				kind = k
+				break
 			end
-			if EnemyService.Spawn(next) then
-				quota[next] -= 1
+		end
+		if kind then
+			if EnemyService.Spawn(kind) then
+				quota[kind] -= 1
 			end
-			next = if next == "FogCrawler" then "Drowned" else "FogCrawler"
 		elseif swarming then
 			EnemyService.Spawn("FogCrawler")
 		end
@@ -485,11 +531,150 @@ local function drownedThink(e: Enemy, _dt: number, t: number)
 	attackTower(e, t)
 end
 
+local function fleeLight(e: Enemy, dt: number, t: number)
+	local pos = e.root.Position
+	if t >= e.flinchCooldown then
+		e.flinchUntil = t + 0.6
+		e.flinchCooldown = t + 1.6
+	end
+	e.humanoid:TakeDamage(e.stats.LightDamagePerSecond * dt)
+	local c = LightService.GetCenter()
+	local out = Vector3.new(pos.X - c.X, 0, pos.Z - c.Z)
+	if out.Magnitude < 1 then
+		out = Vector3.new(1, 0, 0)
+	end
+	e.humanoid:MoveTo(pos + out.Unit * 20)
+end
+
+local function circleLight(e: Enemy, dt: number, extra: number)
+	e.orbit += dt * 0.15
+	local c = LightService.GetCenter()
+	local r = math.max(LightService.GetRadius(), 20) + extra
+	e.humanoid:MoveTo(Vector3.new(c.X + math.cos(e.orbit) * r, e.root.Position.Y, c.Z + math.sin(e.orbit) * r))
+end
+
+local function gullThink(e: Enemy, dt: number, t: number)
+	local s = e.stats
+	local pos = e.root.Position
+	local h = e.humanoid
+	local wantHeight = s.FlyHeight
+	if LightService.IsPointLit(pos) then
+		h.HipHeight += (s.FlyHeight - h.HipHeight) * math.min(1, dt * 2)
+		fleeLight(e, dt, t)
+		return
+	end
+	local climbing = t < (e.data.climbUntil or 0)
+	local target = if climbing then nil else nearestPlayer(pos, not LightService.IsSwarming(), 200)
+	if target then
+		local flat = Vector3.new(target.root.Position.X - pos.X, 0, target.root.Position.Z - pos.Z).Magnitude
+		if flat < s.DiveRange then
+			-- dive: drop toward the player's head
+			wantHeight = math.max(2.5, math.min(s.FlyHeight, flat * 0.4))
+			h:MoveTo(target.root.Position)
+			if target.distance <= s.AttackRange + 1 and ready(e, t) then
+				target.humanoid:TakeDamage(s.Damage)
+				e.attackUntil = t + 0.8
+				e.data.climbUntil = t + 2.5
+				e.model:SetAttribute("AnimRestart", (e.model:GetAttribute("AnimRestart") or 0) + 1)
+			end
+		else
+			h:MoveTo(target.root.Position)
+		end
+	elseif LightService.IsSwarming() then
+		attackTower(e, t)
+	else
+		circleLight(e, dt, 25)
+	end
+	h.HipHeight += (wantHeight - h.HipHeight) * math.min(1, dt * 3)
+end
+
+local function mimicThink(e: Enemy, dt: number, t: number)
+	local s = e.stats
+	local pos = e.root.Position
+	if LightService.IsPointLit(pos) then
+		fleeLight(e, dt, t)
+		return
+	end
+	if t < (e.data.revealUntil or 0) then
+		e.humanoid:MoveTo(pos) -- standing still while it changes shape
+		return
+	end
+	local target = nearestPlayer(pos, not LightService.IsSwarming(), 250)
+	if not e.data.revealed then
+		-- shuffle toward the nearest player like a lost survivor, then show what it is
+		if target and target.distance <= s.RevealRange then
+			e.data.revealed = true
+			e.data.revealUntil = t + 1.4
+			e.data.forceAnim = "Reveal"
+			e.data.forceUntil = t + 1.4
+			e.humanoid.WalkSpeed = s.RevealSpeed
+			return
+		end
+		if target then
+			e.humanoid:MoveTo(target.root.Position)
+		else
+			circleLight(e, dt, 18)
+		end
+		return
+	end
+	if target then
+		e.humanoid:MoveTo(target.root.Position)
+		if target.distance <= s.AttackRange and ready(e, t) then
+			target.humanoid:TakeDamage(s.Damage)
+			e.attackUntil = t + 0.9
+			e.model:SetAttribute("AnimRestart", (e.model:GetAttribute("AnimRestart") or 0) + 1)
+		end
+	elseif LightService.IsSwarming() then
+		attackTower(e, t)
+	else
+		circleLight(e, dt, 14)
+	end
+end
+
+local function keeperThink(e: Enemy, _dt: number, t: number)
+	local s = e.stats
+	local pos = e.root.Position
+	local lit = LightService.IsPointLit(pos)
+	e.humanoid.WalkSpeed = s.Speed * (if lit then s.LightSlowFactor else 1)
+	-- raise the lantern and call crawlers out of the fog
+	if t >= (e.data.nextSummon or (t + s.SummonEvery * 0.5)) then
+		if not e.data.nextSummon then
+			e.data.nextSummon = t + s.SummonEvery * 0.5
+		else
+			e.data.nextSummon = t + s.SummonEvery
+			e.data.forceAnim = "Summon"
+			e.data.forceUntil = t + 1.6
+			for i = 1, s.SummonCount do
+				local a = rng:NextNumber(0, math.pi * 2)
+				EnemyService.Spawn("FogCrawler", groundAt(pos + Vector3.new(math.cos(a) * 6, 0, math.sin(a) * 6)))
+			end
+		end
+	end
+	if t < (e.data.forceUntil or 0) then
+		e.humanoid:MoveTo(pos)
+		return
+	end
+	local target = nearestPlayer(pos, false, 14)
+	if target then
+		e.humanoid:MoveTo(target.root.Position)
+		if target.distance <= s.AttackRange and ready(e, t) then
+			target.humanoid:TakeDamage(s.Damage)
+			e.attackUntil = t + 1.2
+			e.model:SetAttribute("AnimRestart", (e.model:GetAttribute("AnimRestart") or 0) + 1)
+		end
+		return
+	end
+	attackTower(e, t)
+end
+
 -- Which Blender clip should this creature play right now?
 -- per creature: clip names and the ground speed (studs/s) the move cycle was animated at
 local CLIPS = {
 	FogCrawler = { flinch = "Flinch", attack = "Lunge", move = "Crawl", moveSpeed = 2.5, maxRate = 4.5 },
 	Drowned = { flinch = "Stagger", attack = "Pound", move = "Shamble", moveSpeed = 3.4, maxRate = 2.6 },
+	NightGull = { flinch = "Screech", attack = "Dive", move = "Fly", idle = "Glide", moveSpeed = 12, maxRate = 2 },
+	FogMimic = { flinch = "Idle", attack = "Lunge", move = "Walk", moveSpeed = 4, maxRate = 3.5 },
+	LastKeeper = { flinch = "Idle", attack = "Swing", move = "Walk", moveSpeed = 3, maxRate = 2 },
 }
 local function updateAnim(e: Enemy, t: number)
 	local kind = e.model:GetAttribute("Creature")
@@ -497,9 +682,11 @@ local function updateAnim(e: Enemy, t: number)
 	if not clips then
 		return
 	end
-	local anim, speed = "Idle", 1
+	local anim, speed = clips.idle or "Idle", 1
 	local spawnedAt = e.model:GetAttribute("SpawnedAt")
-	if typeof(spawnedAt) == "number" and t - spawnedAt < 2.6 then
+	if e.data.forceAnim and t < (e.data.forceUntil or 0) then
+		anim = e.data.forceAnim
+	elseif typeof(spawnedAt) == "number" and t - spawnedAt < 2.6 then
 		anim = "Emerge"
 	elseif t < e.flinchUntil then
 		anim = clips.flinch
@@ -546,6 +733,12 @@ local function tick(dt: number)
 		end
 		if e.kind == "Drowned" then
 			drownedThink(e, dt, t)
+		elseif e.kind == "NightGull" then
+			gullThink(e, dt, t)
+		elseif e.kind == "FogMimic" then
+			mimicThink(e, dt, t)
+		elseif e.kind == "LastKeeper" then
+			keeperThink(e, dt, t)
 		else
 			crawlerThink(e, dt, t)
 		end
@@ -601,13 +794,13 @@ function EnemyService.Start()
 		if info.phase == "Storm" then
 			local players = math.max(1, #Players:GetPlayers())
 			local special = info.specialStorm
-			quota.FogCrawler = countFor(E.FogCrawler, info.currentStorm, players)
-			quota.Drowned = countFor(E.Drowned, info.currentStorm, players)
+			for _, kind in E.Order do
+				quota[kind] = countFor((E :: any)[kind], info.currentStorm, players)
+			end
 			if special == "RedTide" then
 				quota.Drowned = math.max(2, quota.Drowned * 2)
 			elseif special == "CalmNight" then
-				quota.FogCrawler = 0
-				quota.Drowned = 0
+				table.clear(quota)
 			end
 			task.spawn(spawnLoop)
 		elseif info.phase == "Dawn" or info.phase == "Lost" or info.phase == "Won" then
