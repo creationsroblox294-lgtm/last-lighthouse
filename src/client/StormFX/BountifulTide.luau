@@ -5,6 +5,7 @@
 -- Opening a treasure chest (StormEvent "ChestOpened") throws out a fountain of gold.
 -- Textures: Blender (Storms_FX.blend: BountifulTide foam, GoldenRain sparkle + mote).
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -206,6 +207,15 @@ return function(ctx: Common.Ctx)
 				flash.Brightness = 7
 				flash.Parent = foamBox
 				Common.tween(flash, 1.2, { Brightness = 0 })
+				-- players own their own physics, so the shove for anyone in the surf happens here
+				local character = Players.LocalPlayer.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart")
+				if root and root:IsA("BasePart") then
+					local flat = Vector3.new(root.Position.X - at.X, 0, root.Position.Z - at.Z)
+					if flat.Magnitude < 28 then
+						root.AssemblyLinearVelocity += -out * 45 + Vector3.new(0, 18, 0)
+					end
+				end
 				local camera = Workspace.CurrentCamera
 				if camera then
 					local dist = (camera.CFrame.Position - finish).Magnitude

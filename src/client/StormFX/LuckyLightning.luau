@@ -8,6 +8,7 @@
 -- Textures: Blender (LuckyLightning: spark, clover, glow) + Starfall flash + Golden Rain mote.
 
 local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
@@ -315,6 +316,16 @@ return function(ctx: Common.Ctx)
 			local foot = if typeof(data.foot) == "Vector3" then data.foot else target
 			burstAt(if kind == "tree" then foot :: Vector3 else target, kind)
 			flashScreen(if kind == "lamp" then 1.4 else 1)
+			-- a ground strike throws you clear if you were standing on it (players own their physics)
+			local character = Players.LocalPlayer.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart")
+			local hitAt = if kind == "tree" then foot :: Vector3 else target
+			if kind ~= "lamp" and root and root:IsA("BasePart") then
+				local flat = Vector3.new(root.Position.X - hitAt.X, 0, root.Position.Z - hitAt.Z)
+				if flat.Magnitude < 7 and math.abs(root.Position.Y - hitAt.Y) < 12 then
+					root.AssemblyLinearVelocity += (if flat.Magnitude > 0.1 then flat.Unit else Vector3.xAxis) * 40 + Vector3.new(0, 25, 0)
+				end
+			end
 			local camera = Workspace.CurrentCamera
 			if camera then
 				local dist = (camera.CFrame.Position - target).Magnitude

@@ -268,7 +268,31 @@ add({
 		Haze = "rbxassetid://97891709522639",
 	},
 })
-planned("SeaBreeze", "Sea Breeze", "Mild", "The wind is picking up a little.", "Sea Breeze: mind your footing.")
+add({
+	Id = "SeaBreeze",
+	Name = "Sea Breeze",
+	Tier = "Mild",
+	Built = true,
+	Forecast = "The wind is picking up a little.",
+	Blurb = "Sea Breeze! Mind your footing: the gusts can knock you flat. Get under cover when it roars.",
+	Color = Color3.fromRGB(150, 220, 255),
+	DrainMultiplier = 2.5,
+	EnemyMultiplier = 0.85,
+	-- a bright, blustery day (Storms/SeaBreeze times the gusts; StormFX/SeaBreeze draws them and pushes you)
+	Look = {
+		ClockTime = 11,
+		Brightness = 3,
+		Exposure = 0.15,
+		Ambient = Color3.fromRGB(140, 160, 180),
+		FogDensity = 0.2,
+		FogHaze = 0.8,
+		FogColor = Color3.fromRGB(190, 215, 240),
+	},
+	Textures = {
+		Leaf = "rbxassetid://105999470506423",
+		Streak = "rbxassetid://134764319364715",
+	},
+})
 planned("MorningMist", "Morning Mist", "Mild", "Mist is creeping in low over the water.", "Mist hugs the ground.")
 planned("Hailstorm", "Hailstorm", "Mild", "The air has turned sharp and cold.", "Hail! Stay under cover.")
 planned("Squall", "Squall", "Mild", "Dark bands of rain on the horizon.", "Squall: rain comes in bursts.")
