@@ -427,7 +427,32 @@ add({
 		Leaf = "rbxassetid://105999470506423",
 	},
 })
-planned("Thunderhead", "Thunderhead", "Moderate", "A towering cloud is building.", "Thunderhead! Lightning everywhere.")
+add({
+	Id = "Thunderhead",
+	Name = "Thunderhead",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "A towering cloud is building.",
+	Blurb = "Thunderhead! Lightning everywhere. Drop any scrap you're carrying: metal draws the bolts.",
+	Color = Color3.fromRGB(170, 180, 255),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 0.9,
+	-- a dark blue-violet supercell (Storms/Thunderhead aims the bolts; StormFX/Thunderhead draws the cloud and bolts)
+	Look = {
+		ClockTime = 17,
+		Brightness = 1.4,
+		Exposure = -0.05,
+		Ambient = Color3.fromRGB(95, 100, 135),
+		FogDensity = 0.34,
+		FogHaze = 1.6,
+		FogColor = Color3.fromRGB(95, 100, 140),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Spark = "rbxassetid://124288772478718",
+		Mote = "rbxassetid://72567132198596",
+	},
+})
 planned("HighTide", "High Tide", "Moderate", "The sea is swelling.", "High Tide! The water is rising.")
 planned("SilentFog", "Silent Fog", "Moderate", "Everything has gone very quiet.", "Silent Fog.")
 planned("FreezingRain", "Freezing Rain", "Moderate", "The temperature is dropping.", "Freezing Rain! The ground is icy.")
