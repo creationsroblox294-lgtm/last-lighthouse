@@ -13,6 +13,7 @@ local StormState = require(Shared:WaitForChild("StormState"))
 local FogController = {}
 
 local activeTweens: { Tween } = {}
+local held = false -- the intro cutscene drives the look while it plays
 
 local function getAtmosphere(): Atmosphere
 	local existing = Lighting:FindFirstChildOfClass("Atmosphere")
@@ -26,7 +27,7 @@ end
 
 local function apply(phase: string, instant: boolean)
 	local look = (Config.PhaseLook :: any)[phase]
-	if not look then
+	if not look or held then
 		return
 	end
 
@@ -69,12 +70,26 @@ local function apply(phase: string, instant: boolean)
 	atmosphereTween:Play()
 end
 
+local function current(): string
+	local phase = StormState.get():GetAttribute("Phase")
+	return if typeof(phase) == "string" then phase else "Calm"
+end
+
+-- Hold(true) stops the phase look from changing anything; Hold(false) snaps back to it.
+function FogController.Hold(on: boolean)
+	held = on
+	if on then
+		for _, tween in activeTweens do
+			tween:Cancel()
+		end
+		table.clear(activeTweens)
+	else
+		apply(current(), true)
+	end
+end
+
 function FogController.Start()
 	local state = StormState.get()
-	local function current(): string
-		local phase = state:GetAttribute("Phase")
-		return if typeof(phase) == "string" then phase else "Calm"
-	end
 	apply(current(), true)
 	state:GetAttributeChangedSignal("Phase"):Connect(function()
 		apply(current(), false)

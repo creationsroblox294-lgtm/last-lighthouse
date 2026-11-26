@@ -156,3 +156,10 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   (Terrain.WaterTransparency 0.92) so they show from the shore.
 - Forage visuals are Blender meshes (carrot, apple, red/blue berries, red/brown mushrooms,
   pumpkin) kept in `ServerStorage.ForageMeshes`.
+- Intro cutscene (`IntroController`, ~30 s, skippable) runs live in the engine and stars the
+  player's own avatar: a clone of your character in the rowboat at a saturated sunset, the
+  storm rolls in (rain, lightning, tossing boat), a giant wave flips the boat, then you wake
+  face down on the south beach at dawn, stand up and the camera cranes up to the lighthouse.
+  `FogController.Hold` pauses the phase look while it plays. Turn it off with
+  `Config.Intro.Enabled = false`. The Blender render of the same story stays in
+  Cutscene_Intro.blend / IntroCutscene.mp4.
