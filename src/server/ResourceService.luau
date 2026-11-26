@@ -199,6 +199,9 @@ local function give(player: Player, kind: string): boolean
 	return true
 end
 
+-- defined further down (tree felling uses it before its definition)
+local setVisible: (model: Instance, visible: boolean) -> ()
+
 -- Public: one punch on a tree. Every R.PunchesPerTree punches gives a piece of wood;
 -- the tree then disappears and grows back. Returns "hit", "wood", "full" or nil.
 function ResourceService.HitTree(player: Player, tree: Model): string?
@@ -228,6 +231,24 @@ function ResourceService.HitTree(player: Player, tree: Model): string?
 		end
 	end)
 	return "wood"
+end
+
+-- Public: knock a tree down outright (a lightning strike). It hides and grows back like a
+-- punched-out tree. Returns false if it was already down.
+function ResourceService.FellTree(tree: Model): boolean
+	if tree:GetAttribute("Felled") == true then
+		return false
+	end
+	tree:SetAttribute("Hits", 0)
+	tree:SetAttribute("Felled", true)
+	setVisible(tree, false)
+	task.delay(R.TreeRegrowSeconds, function()
+		if tree.Parent then
+			setVisible(tree, true)
+			tree:SetAttribute("Felled", false)
+		end
+	end)
+	return true
 end
 
 -- Public: hand a fresh item to the player (FishService uses this)
@@ -386,7 +407,7 @@ local function setupStations(map: Instance)
 	end
 end
 
-local function setVisible(model: Instance, visible: boolean)
+function setVisible(model: Instance, visible: boolean)
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			-- remember each part's own look so invisible collision parts and leaf cards stay correct

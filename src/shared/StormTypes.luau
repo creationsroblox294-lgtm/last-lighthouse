@@ -210,7 +210,34 @@ add({
 		Spray = "rbxassetid://73237222095974",
 	},
 })
-planned("LuckyLightning", "Lucky Lightning", "Blessed", "Dry thunder, and the air smells of pine.", "Lucky Lightning! Bolts are splitting trees into wood.")
+add({
+	Id = "LuckyLightning",
+	Name = "Lucky Lightning",
+	Tier = "Blessed",
+	Built = true,
+	Forecast = "Dry thunder, and the air smells of pine.",
+	Blurb = "Lucky Lightning! Bolts are splitting trees into firewood and frying creatures. Don't stand where it crackles!",
+	Color = Color3.fromRGB(190, 170, 255),
+	DrainMultiplier = 1.7,
+	EnemyMultiplier = 0.75,
+	-- a dry, electric violet dusk (Storms/LuckyLightning aims the bolts; StormFX/LuckyLightning draws them)
+	Look = {
+		ClockTime = 19,
+		Brightness = 2.2,
+		Exposure = 0.3,
+		Ambient = Color3.fromRGB(130, 110, 175),
+		FogDensity = 0.3,
+		FogHaze = 1.5,
+		FogColor = Color3.fromRGB(90, 70, 140),
+	},
+	Textures = {
+		Spark = "rbxassetid://124288772478718",
+		Clover = "rbxassetid://85096880326443",
+		Glow = "rbxassetid://133210713162638",
+		Flash = "rbxassetid://139636482279050",
+		Mote = "rbxassetid://72567132198596",
+	},
+})
 
 ----------------------------------------------------------------- Mild
 planned("Drizzle", "Drizzle", "Mild", "Light clouds rolling in.", "Just a drizzle.")
