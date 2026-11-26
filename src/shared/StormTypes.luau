@@ -128,7 +128,32 @@ add({
 		Star = "rbxassetid://126403501619669",
 	},
 })
-planned("BountifulTide", "Bountiful Tide", "Blessed", "The tide smells of tar and treasure.", "Bountiful Tide! The waves are washing up loot.")
+add({
+	Id = "BountifulTide",
+	Name = "Bountiful Tide",
+	Tier = "Blessed",
+	Built = true,
+	Forecast = "The tide smells of tar and treasure.",
+	Blurb = "Bountiful Tide! Glowing waves are washing loot and treasure chests onto the beaches!",
+	Color = Color3.fromRGB(70, 235, 215),
+	DrainMultiplier = 1.6,
+	EnemyMultiplier = 0.6,
+	-- a glowing turquoise dusk (Storms/BountifulTide rolls the waves in; StormFX/BountifulTide draws them)
+	Look = {
+		ClockTime = 17.85,
+		Brightness = 2.6,
+		Exposure = 0.2,
+		Ambient = Color3.fromRGB(170, 140, 175),
+		FogDensity = 0.24,
+		FogHaze = 2.2,
+		FogColor = Color3.fromRGB(255, 150, 160),
+	},
+	Textures = {
+		Foam = "rbxassetid://119411769037011",
+		Sparkle = "rbxassetid://83247130952036",
+		Mote = "rbxassetid://72567132198596",
+	},
+})
 planned("AuroraNight", "Aurora Night", "Blessed", "The sky shimmers green to the north.", "Aurora Night! The creatures are weak tonight.")
 planned("FishRain", "Fish Rain", "Blessed", "A waterspout is dancing out at sea...", "Fish Rain! Free food is falling from the sky.")
 planned("LuckyLightning", "Lucky Lightning", "Blessed", "Dry thunder, and the air smells of pine.", "Lucky Lightning! Bolts are splitting trees into wood.")
