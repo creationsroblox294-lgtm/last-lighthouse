@@ -507,7 +507,34 @@ add({
 		Vignette = "rbxassetid://134594259515631",
 	},
 })
-planned("FreezingRain", "Freezing Rain", "Moderate", "The temperature is dropping.", "Freezing Rain! The ground is icy.")
+add({
+	Id = "FreezingRain",
+	Name = "Freezing Rain",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "The temperature is dropping.",
+	Blurb = "Freezing Rain! The ground is icy and the cold gets into you. Stay near the light, and keep the lamp clear of ice.",
+	Color = Color3.fromRGB(190, 220, 245),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 0.9,
+	-- cold blue-grey sleet (Storms/FreezingRain chills players and ices the lamp; StormFX/FreezingRain draws it and makes the ground slippery)
+	Look = {
+		ClockTime = 15.5,
+		Brightness = 1.4,
+		Exposure = -0.1,
+		Ambient = Color3.fromRGB(120, 140, 165),
+		FogDensity = 0.4,
+		FogHaze = 2,
+		FogColor = Color3.fromRGB(170, 190, 210),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Pellet = "rbxassetid://128143376871068",
+		Glint = "rbxassetid://117341182317330",
+		Frost = "rbxassetid://75634646301252",
+		Smoke = "rbxassetid://79085558579719",
+	},
+})
 planned("SandstormSurge", "Sandstorm Surge", "Moderate", "Sand is lifting off the beaches.", "Sandstorm Surge! Stay off the shore.")
 planned("GhostShip", "Ghost Ship", "Moderate", "A bell is ringing out at sea...", "A Ghost Ship drifts offshore.")
 planned("WildSwarm", "Wild Swarm", "Moderate", "The trees are rustling. Something is restless.", "Wild Swarm! The tree animals are frenzied.")
