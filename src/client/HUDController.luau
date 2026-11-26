@@ -15,6 +15,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local SharedState = require(Shared:WaitForChild("SharedState"))
+local StormTypes = require(Shared:WaitForChild("StormTypes"))
 
 local HUDController = {}
 
@@ -33,12 +34,6 @@ local PHASE_COLOR: { [string]: Color3 } = {
 	Dawn = Color3.fromRGB(255, 220, 160),
 	Won = Color3.fromRGB(255, 240, 150),
 	Lost = Color3.fromRGB(200, 80, 80),
-}
-local SPECIAL_TEXT: { [string]: string } = {
-	SilentFog = "Silent Fog",
-	RedTide = "Red Tide",
-	GhostShip = "Ghost Ship",
-	CalmNight = "Calm Night",
 }
 local KIND_COLOR: { [string]: Color3 } = {
 	Alarm = Color3.fromRGB(255, 110, 90),
@@ -279,11 +274,16 @@ function HUDController.Start()
 			title = `STORM {stormNumber}`
 			if isGreat then
 				title ..= " · GREAT STORM"
-			elseif typeof(special) == "string" and SPECIAL_TEXT[special] then
-				title ..= ` · {SPECIAL_TEXT[special]}`
+			elseif typeof(special) == "string" and special ~= "" and special ~= "Ordinary" then
+				-- the barometer only hints during the calm; the name is revealed at the warning
+				local t = StormTypes.Get(special)
+				title ..= if phaseName == "Calm" then " · ???" else ` · {string.upper(t.Name)}`
 			end
 		end
 		local color = PHASE_COLOR[phaseName] or Color3.new(1, 1, 1)
+		if (phaseName == "Warning" or phaseName == "Storm") and typeof(special) == "string" and special ~= "" and special ~= "Ordinary" then
+			color = StormTypes.Get(special).Color
+		end
 		stormLabel.Text = title
 		phaseLabel.Text = if storm:GetAttribute("Holding") == true then "Drive off the Tide Caller!" else (PHASE_TEXT[phaseName] or phaseName)
 		phaseLabel.TextColor3 = color

@@ -797,6 +797,12 @@ function EnemyService.Start()
 			for _, kind in E.Order do
 				quota[kind] = countFor((E :: any)[kind], info.currentStorm, players)
 			end
+			local mult = StormDirector.GetStormType().EnemyMultiplier
+			if mult then
+				for kind, n in quota do
+					quota[kind] = if n > 0 then math.max(1, math.floor(n * mult + 0.5)) else 0
+				end
+			end
 			if special == "RedTide" then
 				quota.Drowned = math.max(2, quota.Drowned * 2)
 			elseif special == "CalmNight" then

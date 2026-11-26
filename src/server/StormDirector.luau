@@ -20,6 +20,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local SharedState = require(Shared:WaitForChild("SharedState"))
 local Types = require(Shared:WaitForChild("Types"))
+local StormTypes = require(Shared:WaitForChild("StormTypes"))
 
 type Phase = Types.Phase
 type PhaseInfo = Types.PhaseInfo
@@ -43,7 +44,7 @@ local phaseChangedRemote: RemoteEvent
 local stormsSurvived = 0
 local currentStorm = 1
 local isGreatStorm = false
-local specialStorm: string? = nil
+local specialStorm: string? = nil -- tonight's StormTypes id
 local currentPhase: Phase = "Calm"
 local phaseEndsAt = 0
 local holding = false
@@ -93,6 +94,11 @@ function StormDirector.GetPhase(): Phase
 	return currentPhase
 end
 
+-- Tonight's storm type (StormTypes entry)
+function StormDirector.GetStormType(): StormTypes.StormType
+	return StormTypes.Get(specialStorm)
+end
+
 local function publish()
 	state:SetAttribute("Phase", currentPhase)
 	state:SetAttribute("CurrentStorm", currentStorm)
@@ -100,6 +106,7 @@ local function publish()
 	state:SetAttribute("PhaseEndsAt", phaseEndsAt)
 	state:SetAttribute("IsGreatStorm", isGreatStorm)
 	state:SetAttribute("SpecialStorm", specialStorm or "")
+	state:SetAttribute("StormType", specialStorm or "Ordinary")
 	state:SetAttribute("Holding", holding)
 
 	local info = StormDirector.GetInfo()
@@ -135,6 +142,7 @@ local function runPhase(phase: Phase): boolean
 	holding = false
 	phaseEndsAt = now() + durationOf(phase)
 	publish()
+	announce(phase)
 	if not waitUntil(phaseEndsAt) then
 		return false
 	end
@@ -154,12 +162,30 @@ local function runPhase(phase: Phase): boolean
 	return lostReason == nil
 end
 
--- Decide what kind of storm is coming (shown on the HUD during the calm)
+-- Roll tonight's storm type (StormTypes). Early storms only roll easy types; Great Storms
+-- are always the ordinary boss storm. Studio: set Workspace attribute DebugStormType
+-- (e.g. "GoldenRain") to force a type.
 local function rollStorm()
 	isGreatStorm = currentStorm % Config.GreatStormEvery == 0 or currentStorm >= Config.LastLightStartsAt
-	specialStorm = nil
-	if not isGreatStorm and rng:NextNumber() < Config.SpecialStormChance then
-		specialStorm = Config.SpecialStorms[rng:NextInteger(1, #Config.SpecialStorms)]
+	local forced = Workspace:GetAttribute("DebugStormType")
+	local forcedId = if RunService:IsStudio() and typeof(forced) == "string" and forced ~= "" then forced else nil
+	if isGreatStorm and not forcedId then
+		specialStorm = "Ordinary"
+	else
+		specialStorm = StormTypes.Roll(currentStorm, rng, forcedId).Id
+	end
+end
+
+-- Tell everyone what's coming (calm) and what it is (storm start)
+local function announce(phase: Phase)
+	local t = StormTypes.Get(specialStorm)
+	if t.Id == "Ordinary" then
+		return
+	end
+	if phase == "Calm" then
+		Remotes.notify(nil, `Barometer: {t.Forecast}`, nil)
+	elseif phase == "Storm" then
+		Remotes.notify(nil, t.Blurb, if t.Tier == "Blessed" then "Good" else "Alarm")
 	end
 end
 

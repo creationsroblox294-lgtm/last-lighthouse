@@ -196,8 +196,9 @@ local function tick(dt: number)
 	local phase = StormDirector.GetPhase()
 	if phase ~= "Lost" and phase ~= "Won" and fuel > 0 then
 		local drain = L.DrainPerSecond
+		local stormType = StormDirector.GetStormType()
 		if phase == "Storm" then
-			drain *= L.StormDrainMultiplier
+			drain *= stormType.DrainMultiplier or L.StormDrainMultiplier
 		end
 		if leaking then
 			drain *= L.LeakDrainMultiplier
@@ -207,7 +208,8 @@ local function tick(dt: number)
 		if RunService:IsStudio() and typeof(debugDrain) == "number" then
 			drain *= debugDrain
 		end
-		setFuel(fuel - drain * dt)
+		local refuel = if phase == "Storm" then (stormType.RefuelPerSecond or 0) else 0
+		setFuel(fuel - drain * dt + refuel * dt)
 	end
 
 	-- Drop control if the aiming player leaves the lamp room

@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local StormState = require(Shared:WaitForChild("StormState"))
+local StormTypes = require(Shared:WaitForChild("StormTypes"))
 
 local FogController = {}
 
@@ -27,6 +28,13 @@ end
 
 local function apply(phase: string, instant: boolean)
 	local look = (Config.PhaseLook :: any)[phase]
+	if phase == "Storm" then
+		local id = StormState.get():GetAttribute("StormType")
+		local custom = StormTypes.Get(if typeof(id) == "string" then id else nil).Look
+		if custom then
+			look = custom
+		end
+	end
 	if not look or held then
 		return
 	end

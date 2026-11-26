@@ -8,6 +8,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local StormState = require(Shared:WaitForChild("StormState"))
+local StormFXController = require(script.Parent:WaitForChild("StormFXController"))
 
 local WeatherController = {}
 
@@ -39,9 +40,15 @@ function WeatherController.Start()
 
 	local function refresh()
 		local phase = state:GetAttribute("Phase")
+		local id = state:GetAttribute("StormType")
+		if phase == "Storm" and StormFXController.HasCustomRain(if typeof(id) == "string" then id else nil) then
+			rain.Rate = 0
+			return
+		end
 		rain.Rate = if phase == "Storm" then 900 elseif phase == "Warning" then 250 else 0
 	end
 	state:GetAttributeChangedSignal("Phase"):Connect(refresh)
+	state:GetAttributeChangedSignal("StormType"):Connect(refresh)
 	refresh()
 
 	local shakeUntil = 0
