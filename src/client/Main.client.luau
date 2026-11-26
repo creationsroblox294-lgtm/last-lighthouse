@@ -12,6 +12,7 @@ local TreeAnimalController = require(script.Parent:WaitForChild("TreeAnimalContr
 local PunchController = require(script.Parent:WaitForChild("PunchController"))
 local IntroController = require(script.Parent:WaitForChild("IntroController"))
 local SprintController = require(script.Parent:WaitForChild("SprintController"))
+local MinimapController = require(script.Parent:WaitForChild("MinimapController"))
 
 FogController.Start()
 LightController.Start()
@@ -23,4 +24,5 @@ HollowController.Start()
 TreeAnimalController.Start()
 PunchController.Start()
 SprintController.Start()
+MinimapController.Start()
 task.spawn(IntroController.Start)

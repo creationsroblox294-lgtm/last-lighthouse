@@ -281,6 +281,17 @@ Config.Intro = {
 	},
 }
 
+-- Minimap (MinimapController): a top-down render of the island (tools/stitch_map.py).
+-- The image covers the world square MinX..MinX+Span, MinZ..MinZ+Span, north (-Z) up.
+Config.Minimap = {
+	Image = "rbxassetid://104506668850944",
+	ImageSize = 1024, -- pixels
+	MinX = -1050,
+	MinZ = -900,
+	Span = 2100,
+	Zoom = 5, -- the corner map shows Span / Zoom = 420 studs across
+}
+
 -- Hold Shift to sprint (SprintService / SprintController)
 Config.Sprint = {
 	Multiplier = 1.65, -- 16 -> ~26 studs/s

@@ -187,3 +187,14 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   7 seconds of stamina, server-owned (`SprintService`, `Movement`). All walk-speed changes
   (carrying, tree-animal latch) go through `Movement.SetBase`, so sprint never stacks on a
   slow. A stamina bar shows when it isn't full and the camera widens a little while running.
+
+## Minimap
+- `MinimapController`: a round minimap in the bottom-left (north up, your arrow turns with
+  the camera, teammates as blue dots). The lighthouse marker stays pinned to the rim when
+  it's out of range, so it always points the way. Click it, press M (Select on a gamepad)
+  or tap it to open the full island map with you, teammates (named) and the lighthouse.
+- The map image (`assets/IslandMap.png`, Decal 112944993978047 → image 104506668850944) is
+  a stitched top-down render of the island: six Studio screen captures from 1000 studs up
+  (FOV 45), combined by `tools/stitch_map.py`, which also repaints the sea as one gradient.
+  It covers the world square in `Config.Minimap` (X -1050..1050, Z -900..1200). Re-run the
+  captures and the script if the island changes.
