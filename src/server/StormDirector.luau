@@ -114,6 +114,8 @@ local function publish()
 	phaseChangedEvent:Fire(info)
 end
 
+local announce: (phase: Phase) -> () -- defined below rollStorm
+
 -- Wait until a time; returns false if the run was lost meanwhile
 local function waitUntil(t: number): boolean
 	while now() < t do
@@ -177,7 +179,7 @@ local function rollStorm()
 end
 
 -- Tell everyone what's coming (calm) and what it is (storm start)
-local function announce(phase: Phase)
+function announce(phase: Phase)
 	local t = StormTypes.Get(specialStorm)
 	if t.Id == "Ordinary" then
 		return

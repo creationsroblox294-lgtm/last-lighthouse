@@ -85,21 +85,21 @@ add({
 	EnemyMultiplier = 0.6,
 	-- a warm, glowing evening instead of the usual dark storm sky
 	Look = {
-		ClockTime = 17.3,
-		Brightness = 2.4,
-		Exposure = 0.25,
-		Ambient = Color3.fromRGB(170, 135, 90),
-		FogDensity = 0.3,
-		FogHaze = 1.8,
-		FogColor = Color3.fromRGB(255, 196, 110),
+		ClockTime = 17.9, -- low golden-hour sun
+		Brightness = 2.6,
+		Exposure = 0.3,
+		Ambient = Color3.fromRGB(190, 140, 80),
+		FogDensity = 0.4,
+		FogHaze = 2.6,
+		FogColor = Color3.fromRGB(255, 180, 90),
 	},
 	-- rendered in Blender (LastLighthouseAssets/storms/Storms_FX.blend)
 	Textures = {
-		Drop = "",
-		Splash = "",
-		Sparkle = "",
-		Ripple = "",
-		Mote = "",
+		Drop = "rbxassetid://109078171013574",
+		Splash = "rbxassetid://113883163440180",
+		Sparkle = "rbxassetid://83247130952036",
+		Ripple = "rbxassetid://136329093448726",
+		Mote = "rbxassetid://72567132198596",
 	},
 })
 planned("Starfall", "Starfall", "Blessed", "Strange lights streak across the evening sky.", "Starfall! Meteor shards are landing across the island.")

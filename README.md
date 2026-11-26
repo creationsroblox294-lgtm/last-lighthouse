@@ -198,3 +198,21 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   (FOV 45), combined by `tools/stitch_map.py`, which also repaints the sea as one gradient.
   It covers the world square in `Config.Minimap` (X -1050..1050, Z -900..1200). Re-run the
   captures and the script if the island changes.
+
+## Storm types
+- `src/shared/StormTypes.luau` lists all 30 storms in five tiers (Blessed, Mild, Moderate,
+  Severe, Catastrophic) with their barometer forecast, gameplay knobs (DrainMultiplier,
+  RefuelPerSecond, HealPerSecond, EnemyMultiplier), sky look and particle textures.
+  `StormDirector` rolls one per night by tier odds (storms 1-3: only Blessed or Mild; Great
+  Storms stay ordinary). Only `Built = true` types roll; anything else plays as Ordinary.
+- HUD shows `STORM n · ???` during the calm (plus a barometer hint) and reveals the name at
+  the warning. Studio: Workspace attribute `DebugStormType` forces a type.
+- Visuals: `src/client/StormFX/<StormId>.luau` (helpers in `StormFX/Common.luau`), played by
+  `StormFXController` during the storm phase. Server-side player effects (healing etc.) are
+  in `StormEffectsService`.
+- Textures are rendered in Blender (`~/LastLighthouseAssets/storms/Storms_FX.blend` on the
+  MacBook `akhils-macbook-pro-local`) and uploaded as decals from DemonBoy101122.
+
+| Storm | Tier | What it does | Textures |
+|---|---|---|---|
+| Golden Rain | Blessed | lamp burns at calm rate and gains ~0.3 fuel/s, heals players under open sky, 60% creatures; gold rain, glints, falling stars, embers, splashes/ripples, gold sky | drop, splash, sparkle, ripple, mote |
