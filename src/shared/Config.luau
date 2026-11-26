@@ -44,6 +44,7 @@ Config.World = {
 	RampTop = Vector3.new(-10, 8, 174),
 	DoorFront = Vector3.new(-10, 8.3, 162),
 	CliffTopY = 1000, -- no cliff: disables the old ramp routing
+	IntroBeach = Vector3.new(-10, 8, 432), -- where you wash up after the intro cutscene (south beach)
 	BossPosition = Vector3.new(40, 0, -150), -- open sea north of the tower, clear of the dock
 }
 
@@ -262,6 +263,27 @@ Config.TreeAnimals = {
 		Snake = { Weight = 3, WarnSeconds = 1.2, DropSeconds = 0.55, CatchRadius = 3.2, PerchOut = 2, DamagePerSecond = 6, LatchSeconds = 6, Shakes = 8 },
 		Spider = { Weight = 3, WarnSeconds = 1.0, DropSeconds = 0.45, CatchRadius = 3.0, PerchOut = 1.5, DamagePerSecond = 5, LatchSeconds = 5, Shakes = 6 },
 		Bat = { Weight = 2, WarnSeconds = 0.9, DropSeconds = 0.7, CatchRadius = 3.5, PerchOut = 3, DamagePerSecond = 4, LatchSeconds = 5, Shakes = 6 },
+	},
+}
+
+-- Intro cutscene (rendered in Blender, uploaded as a Video asset). Empty = no intro.
+Config.Intro = {
+	-- a Video asset id ("rbxassetid://...") plays the full rendered cutscene
+	-- (uploading videos needs an ID-verified Roblox account). Until then the stills below
+	-- (frames from the same Blender animation) play as a moving storyboard.
+	VideoId = "",
+	Slides = {
+		{ image = "rbxassetid://136349704404435", seconds = 3.0, caption = "One last evening on the water..." },
+		{ image = "rbxassetid://113030210641744", seconds = 2.2 },
+		{ image = "rbxassetid://100381102656962", seconds = 2.4, caption = "Then the sky turned black." },
+		{ image = "rbxassetid://86231060206226", seconds = 1.8 },
+		{ image = "rbxassetid://131547479438310", seconds = 1.2, flash = true },
+		{ image = "rbxassetid://137289358783752", seconds = 2.0, caption = "The sea rose like a wall." },
+		{ image = "rbxassetid://110056570767637", seconds = 1.4 },
+		{ image = "rbxassetid://112040265203097", seconds = 1.6, flash = true, blackAfter = 1.5 },
+		{ image = "rbxassetid://99045394151597", seconds = 3.0, caption = "...and you wake on a strange shore." },
+		{ image = "rbxassetid://113603184366120", seconds = 2.4 },
+		{ image = "rbxassetid://91977006429572", seconds = 3.6 },
 	},
 }
 

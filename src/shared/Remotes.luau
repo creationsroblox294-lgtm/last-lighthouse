@@ -17,6 +17,7 @@ local EVENT_NAMES = {
 	"AnimalWarn", -- server -> client: (kind: string, tree: Model, landAt: Vector3, seconds: number)
 	"Punch", -- client -> server: () throw a punch
 	"PunchHit", -- server -> client: (position: Vector3, kind: string, target: Instance?)
+	"IntroDone", -- client -> server: () the intro cutscene finished or was skipped
 }
 
 local Remotes = {}
