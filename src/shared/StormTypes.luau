@@ -80,7 +80,7 @@ add({
 	Blurb = "Golden Rain! The rain refills the lamp and heals you in the open.",
 	Color = Color3.fromRGB(255, 205, 90),
 	DrainMultiplier = 1, -- the lamp burns at its calm rate
-	RefuelPerSecond = 0.6, -- and the rain tops it up
+	RefuelPerSecond = 0.3, -- and the rain tops it up (~+30 fuel over a storm)
 	HealPerSecond = 1.5,
 	EnemyMultiplier = 0.6,
 	-- a warm, glowing evening instead of the usual dark storm sky
