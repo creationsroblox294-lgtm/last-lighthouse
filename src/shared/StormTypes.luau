@@ -20,6 +20,7 @@ export type StormType = {
 	RefuelPerSecond: number?, -- fuel added each second during the storm
 	HealPerSecond: number?, -- health for players standing in the open
 	EnemyMultiplier: number?, -- scales every creature quota
+	EnemyHealthMultiplier: number?, -- scales the health of creatures spawned during the storm
 	Look: any?, -- optional sky/fog look for the storm phase (same fields as Config.PhaseLook)
 	Textures: any?, -- particle textures for StormFXController
 }
@@ -154,7 +155,33 @@ add({
 		Mote = "rbxassetid://72567132198596",
 	},
 })
-planned("AuroraNight", "Aurora Night", "Blessed", "The sky shimmers green to the north.", "Aurora Night! The creatures are weak tonight.")
+add({
+	Id = "AuroraNight",
+	Name = "Aurora Night",
+	Tier = "Blessed",
+	Built = true,
+	Forecast = "The sky shimmers green to the north.",
+	Blurb = "Aurora Night! The creatures are weak tonight. Touch the aurora wisps for fuel, health and a burst of light!",
+	Color = Color3.fromRGB(110, 255, 180),
+	DrainMultiplier = 1.5,
+	EnemyMultiplier = 0.7,
+	EnemyHealthMultiplier = 0.5,
+	-- a clear, deep night (Storms/AuroraNight floats the wisps; StormFX/AuroraNight draws the sky)
+	Look = {
+		ClockTime = 0.5,
+		Brightness = 1.4,
+		Exposure = 0.25,
+		Ambient = Color3.fromRGB(70, 120, 110),
+		FogDensity = 0.12,
+		FogHaze = 0.6,
+		FogColor = Color3.fromRGB(40, 90, 100),
+	},
+	Textures = {
+		Curtain = "rbxassetid://112320412004363",
+		Wisp = "rbxassetid://136848610196771",
+		Twinkle = "rbxassetid://95153044084608",
+	},
+})
 planned("FishRain", "Fish Rain", "Blessed", "A waterspout is dancing out at sea...", "Fish Rain! Free food is falling from the sky.")
 planned("LuckyLightning", "Lucky Lightning", "Blessed", "Dry thunder, and the air smells of pine.", "Lucky Lightning! Bolts are splitting trees into wood.")
 

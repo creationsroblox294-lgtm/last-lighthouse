@@ -90,8 +90,13 @@ local function newBody(name: string, pos: Vector3, rootSize: Vector3, hipHeight:
 	local humanoid = Instance.new("Humanoid")
 	humanoid.RigType = Enum.HumanoidRigType.R15 -- no legs: float at HipHeight
 	humanoid.HipHeight = hipHeight
-	humanoid.MaxHealth = stats.Health
-	humanoid.Health = stats.Health
+	-- some storms (Aurora Night) weaken every creature that spawns during them
+	local hp = stats.Health
+	if StormDirector.GetPhase() == "Storm" then
+		hp *= StormDirector.GetStormType().EnemyHealthMultiplier or 1
+	end
+	humanoid.MaxHealth = hp
+	humanoid.Health = hp
 	humanoid.WalkSpeed = stats.Speed
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 0
