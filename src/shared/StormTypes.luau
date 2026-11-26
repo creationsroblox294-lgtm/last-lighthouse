@@ -293,7 +293,32 @@ add({
 		Streak = "rbxassetid://134764319364715",
 	},
 })
-planned("MorningMist", "Morning Mist", "Mild", "Mist is creeping in low over the water.", "Mist hugs the ground.")
+add({
+	Id = "MorningMist",
+	Name = "Morning Mist",
+	Tier = "Mild",
+	Built = true,
+	Forecast = "Mist is creeping in low over the water.",
+	Blurb = "Morning Mist... there are figures standing in it. Not all of them are only mist.",
+	Color = Color3.fromRGB(255, 200, 190),
+	DrainMultiplier = 2.5,
+	EnemyMultiplier = 0.8,
+	-- a soft pink-and-gold dawn (Storms/MorningMist places the figures; StormFX/MorningMist draws them)
+	Look = {
+		ClockTime = 6.4,
+		Brightness = 2.4,
+		Exposure = 0.2,
+		Ambient = Color3.fromRGB(170, 145, 150),
+		FogDensity = 0.3,
+		FogHaze = 2,
+		FogColor = Color3.fromRGB(255, 205, 195),
+	},
+	Textures = {
+		Haze = "rbxassetid://97891709522639",
+		Glint = "rbxassetid://117341182317330",
+		Mote = "rbxassetid://72567132198596",
+	},
+})
 planned("Hailstorm", "Hailstorm", "Mild", "The air has turned sharp and cold.", "Hail! Stay under cover.")
 planned("Squall", "Squall", "Mild", "Dark bands of rain on the horizon.", "Squall: rain comes in bursts.")
 planned("RollingThunder", "Rolling Thunder", "Mild", "Distant thunder.", "Rolling Thunder: watch for strikes.")
