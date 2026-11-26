@@ -319,7 +319,32 @@ add({
 		Mote = "rbxassetid://72567132198596",
 	},
 })
-planned("Hailstorm", "Hailstorm", "Mild", "The air has turned sharp and cold.", "Hail! Stay under cover.")
+add({
+	Id = "Hailstorm",
+	Name = "Hailstorm",
+	Tier = "Mild",
+	Built = true,
+	Forecast = "The air has turned sharp and cold.",
+	Blurb = "Hail! It stings out in the open, so stay under cover, and watch for shadows on the ground.",
+	Color = Color3.fromRGB(190, 225, 255),
+	DrainMultiplier = 2.6,
+	EnemyMultiplier = 0.8,
+	-- a bitter steel-blue afternoon (Storms/Hailstorm drops the giant stones; StormFX/Hailstorm draws the hail)
+	Look = {
+		ClockTime = 16,
+		Brightness = 1.7,
+		Exposure = 0,
+		Ambient = Color3.fromRGB(120, 135, 160),
+		FogDensity = 0.34,
+		FogHaze = 1.6,
+		FogColor = Color3.fromRGB(160, 175, 200),
+	},
+	Textures = {
+		Pellet = "rbxassetid://128143376871068",
+		Frost = "rbxassetid://75634646301252",
+		Splash = "rbxassetid://113883163440180",
+	},
+})
 planned("Squall", "Squall", "Mild", "Dark bands of rain on the horizon.", "Squall: rain comes in bursts.")
 planned("RollingThunder", "Rolling Thunder", "Mild", "Distant thunder.", "Rolling Thunder: watch for strikes.")
 
