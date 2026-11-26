@@ -28,7 +28,7 @@ local FADE_OUT, BEACH = 18.6, 20.4
 local STAND, TITLE, FINISH = 24.4, 25.6, 30.5
 
 local SEA_Y = 0
-local BOAT_START = Vector3.new(34, SEA_Y, 598)
+local BOAT_START = Vector3.new(34, SEA_Y, 830) -- far out: the island is only a smudge in the haze
 local BOAT_SPEED = 2.2 -- studs/s, heading north toward the island
 
 local CAPTIONS = {
@@ -76,19 +76,19 @@ local SUNSET: Look = {
 }
 local STORM: Look = {
 	clock = 17.75,
-	bright = 0.8,
-	ambient = Color3.fromRGB(55, 70, 105),
-	outdoor = Color3.fromRGB(70, 85, 125),
-	exposure = 0,
-	density = 0.48,
-	haze = 2.6,
-	fog = Color3.fromRGB(70, 90, 135),
-	decay = Color3.fromRGB(40, 60, 110),
+	bright = 1.8,
+	ambient = Color3.fromRGB(105, 115, 175),
+	outdoor = Color3.fromRGB(125, 140, 200),
+	exposure = 0.35,
+	density = 0.42,
+	haze = 2.2,
+	fog = Color3.fromRGB(95, 120, 190),
+	decay = Color3.fromRGB(120, 80, 170),
 	glare = 0,
-	sat = 0.25,
-	contrast = 0.25,
-	tint = Color3.fromRGB(205, 220, 255),
-	water = Color3.fromRGB(12, 70, 95),
+	sat = 0.55,
+	contrast = 0.22,
+	tint = Color3.fromRGB(200, 225, 255),
+	water = Color3.fromRGB(20, 110, 150),
 	waves = 1.2,
 }
 local DAWN: Look = {
@@ -307,14 +307,21 @@ local function playAnim(actor: Model, id: string): AnimationTrack?
 	return nil
 end
 
-local function makeBoat(): Model
-	local map = Workspace:FindFirstChild("Map")
-	local dock = map and map:FindFirstChild("OldDock")
-	local source = dock and dock:FindFirstChild("Rowboat", true)
+-- returns the boat, how high its pivot floats above the sea, and where its floor is
+-- relative to the pivot (the oar makes collision raycasts useless here)
+local function makeBoat(): (Model, number, number)
+	-- ReplicatedStorage.IntroAssets.Rowboat is a copy of the dock's boat (the one in the map
+	-- may not be streamed in), kept at the dock's position so its float height carries over
+	local assets = ReplicatedStorage:FindFirstChild("IntroAssets")
+	local source = assets and assets:FindFirstChild("Rowboat")
 	local boat: Model
-	if source and source:IsA("Model") then
+	local float, floor = 0.3, 0.3
+	if source and source:IsA("Model") and source:FindFirstChildWhichIsA("BasePart", true) then
 		source.Archivable = true
 		boat = source:Clone()
+		-- keep the same float height it has at the dock (water there is at y = 0)
+		float = source:GetBoundingBox().Position.Y
+		floor = 0.35 - float
 	else
 		-- not streamed in: a simple stand-in hull
 		boat = Instance.new("Model")
@@ -344,28 +351,7 @@ local function makeBoat(): Model
 	noCollide(boat)
 	local cf = boat:GetBoundingBox()
 	boat.WorldPivot = CFrame.new(cf.Position)
-	return boat
-end
-
--- how high the boat's floor sits above its pivot, so the actor can stand on it
-local function floorHeight(boat: Model): number
-	boat:PivotTo(CFrame.new(0, 5000, 0))
-	boat.Parent = Workspace
-	for _, d in boat:GetDescendants() do
-		if d:IsA("BasePart") then
-			d.CanQuery = true
-		end
-	end
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = { boat }
-	local hit = Workspace:Raycast(Vector3.new(0, 5030, 2), Vector3.new(0, -60, 0), params)
-	for _, d in boat:GetDescendants() do
-		if d:IsA("BasePart") then
-			d.CanQuery = false
-		end
-	end
-	return if hit then hit.Position.Y - 5000 else 0
+	return boat, float, floor
 end
 
 local function groundAt(pos: Vector3): Vector3
@@ -443,8 +429,7 @@ function IntroController.Start()
 
 	local actor, standHeight = makeActor()
 	controls(false)
-	local boat = makeBoat()
-	local boatFloor = floorHeight(boat)
+	local boat, boatFloat, boatFloor = makeBoat()
 
 	local scene = Instance.new("Folder")
 	scene.Name = "IntroScene"
@@ -453,22 +438,15 @@ function IntroController.Start()
 		actor.Parent = scene
 	end
 
-	-- open sea beyond the edge of the terrain water, so every camera angle has ocean
-	local sea = part({
-		Size = Vector3.new(2048, 1, 2048),
-		CFrame = CFrame.new(0, SEA_Y - 0.7, 612 + 1024),
-		Material = Enum.Material.SmoothPlastic,
-		Color = SUNSET.water,
-		Reflectance = 0.35,
-		Parent = scene,
-	})
 	local rainCloud = part({ Size = Vector3.new(140, 1, 140), Transparency = 1, Parent = scene })
 	local rain = Instance.new("ParticleEmitter")
 	rain.Texture = "rbxasset://textures/particles/sparkles_main.dds"
 	rain.Color = ColorSequence.new(Color3.fromRGB(190, 210, 235))
 	rain.LightEmission = 0.3
 	rain.Transparency = NumberSequence.new(0.35)
-	rain.Size = NumberSequence.new(0.16)
+	rain.Size = NumberSequence.new(0.22)
+	rain.Squash = NumberSequence.new(3)
+	rain.Orientation = Enum.ParticleOrientation.VelocityParallel
 	rain.Lifetime = NumberRange.new(1.1)
 	rain.Speed = NumberRange.new(80, 100)
 	rain.EmissionDirection = Enum.NormalId.Bottom
@@ -477,10 +455,19 @@ function IntroController.Start()
 	rain.Parent = rainCloud
 	local wave = part({
 		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(260, 20, 20),
+		Size = Vector3.new(900, 20, 20),
 		Material = Enum.Material.SmoothPlastic,
-		Color = Color3.fromRGB(20, 120, 140),
-		Reflectance = 0.2,
+		Color = Color3.fromRGB(30, 160, 185),
+		Reflectance = 0.25,
+		Transparency = 1,
+		Parent = scene,
+	})
+	-- white foam riding the crest
+	local foam = part({
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(900, 6, 6),
+		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(235, 250, 255),
 		Transparency = 1,
 		Parent = scene,
 	})
@@ -535,9 +522,6 @@ function IntroController.Start()
 		terrain.WaterWaveSize = lerp(a.waves, b.waves, k)
 		terrain.WaterWaveSpeed = lerp(10, 28, k)
 		terrain.WaterReflectance = 0.6
-		if sea.Parent then
-			sea.Color = water
-		end
 	end
 
 	local camera = Workspace.CurrentCamera
@@ -547,7 +531,13 @@ function IntroController.Start()
 	local towardTower = (Vector3.new(tower.X, 0, tower.Z) - Vector3.new(beachGround.X, 0, beachGround.Z)).Unit
 	local standPos = beachGround + Vector3.new(0, standHeight, 0)
 	local standCF = CFrame.lookAt(standPos, standPos + towardTower)
-	local proneCF = CFrame.new(beachGround + Vector3.new(0, 0.75, 0)) * standCF.Rotation * CFrame.Angles(-math.pi / 2, 0, 0)
+	-- face down along the slope of the sand: head toward the tower, back to the sky
+	local headGround = groundAt(beachGround + towardTower * 2.2)
+	local feetGround = groundAt(beachGround - towardTower * 2.2)
+	local along = (headGround - feetGround).Unit
+	local right = standCF.RightVector
+	local back = right:Cross(along).Unit
+	local proneCF = CFrame.fromMatrix((headGround + feetGround) / 2 + back * 0.6, right, along, back)
 
 	local isR15 = false
 	if actor then
@@ -568,13 +558,22 @@ function IntroController.Start()
 	local lastFlash = -10
 	local flipCF: CFrame? = nil
 	local onBeach = false
-	local t0 = os.clock()
+	-- Studio testing: set workspace attribute IntroSkipTo (seconds) to start part-way in
+	local skipTo = Workspace:GetAttribute("IntroSkipTo")
+	local t0 = os.clock() - (if typeof(skipTo) == "number" and RunService:IsStudio() then skipTo else 0)
+	while nextBolt <= #LIGHTNING and LIGHTNING[nextBolt] < os.clock() - t0 do
+		nextBolt += 1
+	end
 
 	RunService:BindToRenderStep("IntroCutscene", Enum.RenderPriority.Camera.Value + 1, function()
 		if finished then
 			return
 		end
 		local t = os.clock() - t0
+		local holdAt = Workspace:GetAttribute("IntroHoldAt") -- Studio testing: freeze frame
+		if typeof(holdAt) == "number" and RunService:IsStudio() then
+			t = math.min(t, holdAt)
+		end
 		camera.CameraType = Enum.CameraType.Scriptable
 
 		-- fades and captions
@@ -623,13 +622,13 @@ function IntroController.Start()
 
 			local z = BOAT_START.Z - BOAT_SPEED * t
 			local amp = lerp(1, 6, s)
-			local bob = math.sin(t * lerp(1.4, 2.6, s)) * lerp(0.25, 1.6, s)
+			local bob = math.sin(t * lerp(1.4, 2.6, s)) * lerp(0.2, 0.7, s)
 			local pitch = math.rad(math.sin(t * lerp(1.1, 2.1, s) + 0.7) * amp * 1.4)
 			local roll = math.rad(math.sin(t * lerp(0.9, 1.8, s) + 2.1) * amp * 2.4)
 			local flipK = smooth((t - FLIP) / 1.1)
 			roll += flipK * math.rad(170)
 			bob -= flipK * 2.5
-			local boatCF = CFrame.new(BOAT_START.X, SEA_Y + 0.8 - boatFloor + bob, z) * CFrame.Angles(pitch, 0, roll)
+			local boatCF = CFrame.new(BOAT_START.X, SEA_Y + boatFloat + 0.35 + bob, z) * CFrame.Angles(pitch, 0, roll)
 			boat:PivotTo(boatCF)
 			local seatCF = boatCF * CFrame.new(0, boatFloor + standHeight, 2)
 
@@ -655,11 +654,13 @@ function IntroController.Start()
 				local w = t - WAVE
 				local d = math.min(22 + 26 * w, 70)
 				local front = z + 58 - 38 * w
-				wave.Size = Vector3.new(260, d, d)
+				wave.Size = Vector3.new(900, d, d)
 				wave.CFrame = CFrame.new(BOAT_START.X, SEA_Y + d * 0.12, front + d / 2)
-				wave.Transparency = 0.08
-				wave.Color = STORM.water:Lerp(Color3.fromRGB(40, 170, 180), 0.5)
-				spray.Rate = 160
+				wave.Transparency = 0.05
+				foam.Size = Vector3.new(900, d * 0.3, d * 0.3)
+				foam.CFrame = CFrame.new(BOAT_START.X, SEA_Y + d * 0.55, front + d * 0.42)
+				foam.Transparency = 0.15
+				spray.Rate = 220
 			end
 
 			-- camera
@@ -695,7 +696,7 @@ function IntroController.Start()
 				onBeach = true
 				boat:Destroy()
 				wave:Destroy()
-				sea:Destroy()
+				foam:Destroy()
 				rain.Rate = 0
 				if fallTrack then
 					fallTrack:Stop(0)
@@ -709,20 +710,19 @@ function IntroController.Start()
 				end
 				actor:PivotTo(proneCF:Lerp(standCF, up))
 			end
-			local right = standCF.RightVector
 			local cam: CFrame
 			if t < STAND + 0.6 then
 				-- low and close by your head as you come round
 				local k = (t - BEACH) / (STAND + 0.6 - BEACH)
-				local head = beachGround + towardTower * 2 + Vector3.new(0, 0.8, 0)
-				local eye = head + right * lerp(6, 4.5, k) + towardTower * lerp(3, 2, k) + Vector3.new(0, lerp(1.5, 2.2, k), 0)
-				cam = CFrame.lookAt(eye, head:Lerp(beachGround, 0.4))
+				local head = headGround + Vector3.new(0, 0.8, 0)
+				local eye = head + right * lerp(6.5, 5, k) + towardTower * lerp(3, 2, k) + Vector3.new(0, lerp(3, 3.6, k), 0)
+				cam = CFrame.lookAt(eye, head:Lerp(beachGround, 0.5))
 			else
 				-- crane up behind you to reveal the lighthouse
 				local k = smooth((t - STAND - 0.6) / (FINISH - STAND - 1.2))
 				local body = standCF.Position
-				local eye = body - towardTower * lerp(5, 13, k) + right * lerp(4, 3, k) + Vector3.new(0, lerp(1, 7, k), 0)
-				cam = CFrame.lookAt(eye, body:Lerp(lamp, lerp(0.05, 0.35, k)))
+				local eye = body - towardTower * lerp(5, 14, k) + right * lerp(4, 3, k) + Vector3.new(0, lerp(1.5, 12, k), 0)
+				cam = CFrame.lookAt(eye, body:Lerp(lamp, lerp(0.05, 0.45, k)))
 			end
 			camera.CFrame = cam
 			camera.FieldOfView = 70

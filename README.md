@@ -161,5 +161,9 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   storm rolls in (rain, lightning, tossing boat), a giant wave flips the boat, then you wake
   face down on the south beach at dawn, stand up and the camera cranes up to the lighthouse.
   `FogController.Hold` pauses the phase look while it plays. Turn it off with
-  `Config.Intro.Enabled = false`. The Blender render of the same story stays in
+  `Config.Intro.Enabled = false`. The boat is `ReplicatedStorage.IntroAssets.Rowboat` (a copy
+  of the dock boat, so streaming can't leave it empty). Studio-only test hooks: workspace
+  attributes `IntroSkipTo` (start N seconds in) and `IntroHoldAt` (freeze at N seconds).
+- The ocean (terrain water, surface y = 0, 24 deep) now reaches about 1400 studs from the
+  tower in every direction, so there is no visible edge from the lamp room or the intro. The Blender render of the same story stays in
   Cutscene_Intro.blend / IntroCutscene.mp4.
