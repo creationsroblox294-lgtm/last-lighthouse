@@ -345,7 +345,32 @@ add({
 		Splash = "rbxassetid://113883163440180",
 	},
 })
-planned("Squall", "Squall", "Mild", "Dark bands of rain on the horizon.", "Squall: rain comes in bursts.")
+add({
+	Id = "Squall",
+	Name = "Squall",
+	Tier = "Mild",
+	Built = true,
+	Forecast = "Dark bands of rain on the horizon.",
+	Blurb = "Squall! Walls of rain are sweeping the island. Watch the horizon, and watch your back when one hits.",
+	Color = Color3.fromRGB(160, 190, 180),
+	DrainMultiplier = 2.4,
+	EnemyMultiplier = 0.8,
+	-- a sullen grey-green day (Storms/Squall drives the bands; StormFX/Squall draws the rain walls)
+	Look = {
+		ClockTime = 14.5,
+		Brightness = 1.6,
+		Exposure = 0,
+		Ambient = Color3.fromRGB(115, 130, 125),
+		FogDensity = 0.3,
+		FogHaze = 1.6,
+		FogColor = Color3.fromRGB(140, 155, 150),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Splash = "rbxassetid://113883163440180",
+		Sheet = "rbxassetid://94100520771589",
+	},
+})
 planned("RollingThunder", "Rolling Thunder", "Mild", "Distant thunder.", "Rolling Thunder: watch for strikes.")
 
 ----------------------------------------------------------------- Moderate
