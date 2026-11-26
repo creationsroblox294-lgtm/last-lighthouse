@@ -240,7 +240,34 @@ add({
 })
 
 ----------------------------------------------------------------- Mild
-planned("Drizzle", "Drizzle", "Mild", "Light clouds rolling in.", "Just a drizzle.")
+add({
+	Id = "Drizzle",
+	Name = "Drizzle",
+	Tier = "Mild",
+	Built = true,
+	Forecast = "Light clouds rolling in.",
+	Blurb = "Just a drizzle... but keep an eye on the puddles.",
+	Color = Color3.fromRGB(170, 195, 220),
+	DrainMultiplier = 2.4,
+	EnemyMultiplier = 0.85,
+	-- a hushed silver afternoon (Storms/Drizzle spreads the puddles; StormFX/Drizzle draws them)
+	Look = {
+		ClockTime = 15,
+		Brightness = 1.8,
+		Exposure = 0.05,
+		Ambient = Color3.fromRGB(125, 135, 150),
+		FogDensity = 0.38,
+		FogHaze = 2,
+		FogColor = Color3.fromRGB(170, 180, 195),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Splash = "rbxassetid://113883163440180",
+		Ripple = "rbxassetid://136329093448726",
+		Bubble = "rbxassetid://83414063738231",
+		Haze = "rbxassetid://97891709522639",
+	},
+})
 planned("SeaBreeze", "Sea Breeze", "Mild", "The wind is picking up a little.", "Sea Breeze: mind your footing.")
 planned("MorningMist", "Morning Mist", "Mild", "Mist is creeping in low over the water.", "Mist hugs the ground.")
 planned("Hailstorm", "Hailstorm", "Mild", "The air has turned sharp and cold.", "Hail! Stay under cover.")
