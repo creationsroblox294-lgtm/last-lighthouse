@@ -207,6 +207,8 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   Storms stay ordinary). Only `Built = true` types roll; anything else plays as Ordinary.
 - HUD shows `STORM n · ???` during the calm (plus a barometer hint) and reveals the name at
   the warning. Studio: Workspace attribute `DebugStormType` forces a type.
+- Storm-specific server events: `src/server/Storms/<StormId>.luau` (Start/Stop), fired to
+  clients through the `StormEvent` remote.
 - Visuals: `src/client/StormFX/<StormId>.luau` (helpers in `StormFX/Common.luau`), played by
   `StormFXController` during the storm phase. Server-side player effects (healing etc.) are
   in `StormEffectsService`.
@@ -216,3 +218,4 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
 | Storm | Tier | What it does | Textures |
 |---|---|---|---|
 | Golden Rain | Blessed | lamp burns at calm rate and gains ~0.3 fuel/s, heals players under open sky, 60% creatures; gold rain, glints, falling stars, embers, splashes/ripples, gold sky | drop, splash, sparkle, ripple, mote |
+| Starfall | Blessed | meteors every 1.3-2.6 s (22% chance of a 3-6 volley), warning ring, 20 dmg if hit, leave star shards (+8 lamp fuel each, max 12), lamp burns 2x; violet starry night, shooting stars, flash + shockwave + shake on impact | meteor, flash, star; StarShard model (ReplicatedStorage.StormAssets) |

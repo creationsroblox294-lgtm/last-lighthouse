@@ -102,7 +102,32 @@ add({
 		Mote = "rbxassetid://72567132198596",
 	},
 })
-planned("Starfall", "Starfall", "Blessed", "Strange lights streak across the evening sky.", "Starfall! Meteor shards are landing across the island.")
+add({
+	Id = "Starfall",
+	Name = "Starfall",
+	Tier = "Blessed",
+	Built = true,
+	Forecast = "Strange lights streak across the evening sky.",
+	Blurb = "Starfall! Meteors are raining down. Dodge the rings and grab the star shards for the lamp!",
+	Color = Color3.fromRGB(170, 200, 255),
+	DrainMultiplier = 2, -- gentler than a normal storm
+	EnemyMultiplier = 0.7,
+	-- a clear violet night (Storms/Starfall drops the meteors; StormFX/Starfall draws them)
+	Look = {
+		ClockTime = 21.5,
+		Brightness = 1.6,
+		Exposure = 0.3,
+		Ambient = Color3.fromRGB(110, 110, 170),
+		FogDensity = 0.26,
+		FogHaze = 1.2,
+		FogColor = Color3.fromRGB(120, 105, 210),
+	},
+	Textures = {
+		Meteor = "rbxassetid://133073372860432",
+		Flash = "rbxassetid://139636482279050",
+		Star = "rbxassetid://126403501619669",
+	},
+})
 planned("BountifulTide", "Bountiful Tide", "Blessed", "The tide smells of tar and treasure.", "Bountiful Tide! The waves are washing up loot.")
 planned("AuroraNight", "Aurora Night", "Blessed", "The sky shimmers green to the north.", "Aurora Night! The creatures are weak tonight.")
 planned("FishRain", "Fish Rain", "Blessed", "A waterspout is dancing out at sea...", "Fish Rain! Free food is falling from the sky.")
