@@ -20,6 +20,7 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local SharedState = require(Shared:WaitForChild("SharedState"))
 local StormDirector = require(script.Parent:WaitForChild("StormDirector"))
 local LightService = require(script.Parent:WaitForChild("LightService"))
+local Movement = require(script.Parent:WaitForChild("Movement"))
 
 local R = Config.Resources
 local ResourceService = {}
@@ -140,7 +141,7 @@ end
 local function setCarrySpeed(player: Player, carryingSomething: boolean)
 	local humanoid = humanoidOf(player)
 	if humanoid then
-		humanoid.WalkSpeed = if carryingSomething then R.CarryWalkSpeed else R.WalkSpeed
+		Movement.SetBase(humanoid, if carryingSomething then R.CarryWalkSpeed else R.WalkSpeed)
 	end
 end
 
@@ -515,7 +516,7 @@ function ResourceService.Start()
 		carrying[player] = nil
 		player:SetAttribute("Carrying", nil)
 		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-		humanoid.WalkSpeed = R.WalkSpeed
+		Movement.SetBase(humanoid, R.WalkSpeed)
 		humanoid.Died:Connect(function()
 			ResourceService.DropCarried(player)
 		end)

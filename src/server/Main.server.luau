@@ -18,6 +18,7 @@ local PlayerService = require(Server:WaitForChild("PlayerService"))
 local DataService = require(Server:WaitForChild("DataService"))
 local ForageService = require(Server:WaitForChild("ForageService"))
 local TreeAnimalService = require(Server:WaitForChild("TreeAnimalService"))
+local SprintService = require(Server:WaitForChild("SprintService"))
 
 -- Remotes and state objects must exist before clients look for them
 require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Remotes")).event("Notify")
@@ -36,4 +37,5 @@ PlayerService.Start()
 DataService.Start()
 ForageService.Start()
 TreeAnimalService.Start()
+SprintService.Start()
 StormDirector.Start()

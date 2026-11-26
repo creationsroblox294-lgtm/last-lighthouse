@@ -15,7 +15,65 @@ local IntroService = {}
 local done: { [Player]: boolean } = {}
 
 function IntroService.Start()
+	-- the intro films out at sea and on the south beach, far from where you spawn: until it
+	-- is over, stream the world in around the film set instead of around the character
+	-- (the real character waits, anchored, so it can't fall while its surroundings are unloaded)
+	local foci: { [Player]: BasePart } = {}
+	local function holdCharacter(player: Player, hold: boolean)
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") then
+			root.Anchored = hold
+		end
+	end
+	local function releaseFocus(player: Player)
+		local focus = foci[player]
+		if focus then
+			foci[player] = nil
+			if player.Parent then
+				player.ReplicationFocus = nil
+			end
+			focus:Destroy()
+			holdCharacter(player, false)
+		end
+	end
+	local function onPlayer(player: Player)
+		if not (Config.Intro and Config.Intro.Enabled) or foci[player] then
+			return
+		end
+		player.CharacterAdded:Connect(function(character)
+			if foci[player] then
+				local root = character:WaitForChild("HumanoidRootPart", 5)
+				if root and root:IsA("BasePart") and foci[player] then
+					root.Anchored = true
+				end
+			end
+		end)
+		holdCharacter(player, true)
+		local focus = Instance.new("Part")
+		focus.Name = "IntroFocus_" .. player.UserId
+		focus.Anchored = true
+		focus.CanCollide = false
+		focus.CanQuery = false
+		focus.CanTouch = false
+		focus.Transparency = 1
+		focus.Size = Vector3.one
+		focus.Position = Config.Intro.FilmSet or Vector3.new(30, 10, 1000)
+		focus.Parent = Workspace
+		foci[player] = focus
+		player.ReplicationFocus = focus
+		-- never leave someone stuck streaming the film set
+		task.delay(90, function()
+			releaseFocus(player)
+		end)
+	end
+	Players.PlayerAdded:Connect(onPlayer)
+	for _, player in Players:GetPlayers() do
+		onPlayer(player)
+	end
+
 	Remotes.event("IntroDone").OnServerEvent:Connect(function(player: Player)
+		releaseFocus(player)
 		if done[player] then
 			return
 		end
@@ -40,6 +98,7 @@ function IntroService.Start()
 		Remotes.notify(player, "You wash up on a strange island. Find the lighthouse.", "Good")
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		releaseFocus(player)
 		done[player] = nil
 	end)
 end

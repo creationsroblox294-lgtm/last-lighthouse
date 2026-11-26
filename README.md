@@ -156,10 +156,16 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   (Terrain.WaterTransparency 0.92) so they show from the shore.
 - Forage visuals are Blender meshes (carrot, apple, red/blue berries, red/brown mushrooms,
   pumpkin) kept in `ServerStorage.ForageMeshes`.
-- Intro cutscene (`IntroController`, ~30 s, skippable) runs live in the engine and stars the
-  player's own avatar: a clone of your character in the rowboat at a saturated sunset, the
-  storm rolls in (rain, lightning, tossing boat), a giant wave flips the boat, then you wake
-  face down on the south beach at dawn, stand up and the camera cranes up to the lighthouse.
+- Intro cutscene (`IntroController`, ~34 s, skippable) runs live in the engine and stars the
+  player's own avatar: a clone of your character rows the boat at a saturated sunset, braces
+  as the storm rolls in (rain, lightning, tossing boat), is thrown out as a physics ragdoll
+  when the giant wave flips the boat, then lies on the south beach at dawn, pushes up and
+  stands, and the camera flies over the forest to the lighthouse. The R15 clips (Row, Brace,
+  GetUp in `Config.Intro.Animations`) were made with Studio's animation generator; each frame
+  the actor's lowest body part is kept on its floor (boat or sand), so the poses rest on real
+  surfaces. The camera eases between shots instead of cutting. While it plays the server
+  points the player's `ReplicationFocus` at `Config.Intro.FilmSet` (anchoring the real
+  character) so the far-off sea and beach stream in.
   `FogController.Hold` pauses the phase look while it plays. Turn it off with
   `Config.Intro.Enabled = false`. The boat is `ReplicatedStorage.IntroAssets.Rowboat` (a copy
   of the dock boat, so streaming can't leave it empty). Studio-only test hooks: workspace
@@ -167,3 +173,17 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
 - The ocean (terrain water, surface y = 0, 24 deep) now reaches about 1400 studs from the
   tower in every direction, so there is no visible edge from the lamp room or the intro. The Blender render of the same story stays in
   Cutscene_Intro.blend / IntroCutscene.mp4.
+
+## Island v5 (2x) and sprint
+- The island is twice as wide (heights unchanged), scaled around the lighthouse by
+  `tools/MapScale.luau` (ServerStorage.MapScale): terrain re-sampled with bilinear
+  occupancy and made solid under the surface, objects spread out and re-seated on the
+  ground, the dock moved as one piece, and 2 extra copies of each tree / bush / flower /
+  rock / forage plant scattered nearby (~4,000 items). Ocean (terrain water) reaches ~2600
+  studs around the tower. Config positions that depend on the layout were scaled to match
+  (IslandCenter/Radius, IntroBeach, BossPosition, Hollow lairs, fish schools, spawn radius,
+  beam range); Calm/Dawn fog is lighter so the tower stays visible from the shore.
+- Hold Shift (L3 on a gamepad, the Run button on touch) to sprint: x1.65 speed for about
+  7 seconds of stamina, server-owned (`SprintService`, `Movement`). All walk-speed changes
+  (carrying, tree-animal latch) go through `Movement.SetBase`, so sprint never stacks on a
+  slow. A stamina bar shows when it isn't full and the camera widens a little while running.

@@ -36,16 +36,16 @@ Config.SpecialStorms = { "SilentFog", "RedTide", "GhostShip", "CalmNight" }
 -- World positions (match tools/BuildGreybox.luau)
 ---------------------------------------------------------------------------
 Config.World = {
-	IslandCenter = Vector3.new(0, 3, 170), -- the island was doubled in size toward the south
-	IslandRadius = 310,
+	IslandCenter = Vector3.new(10, 3, 190), -- the island is twice as wide again (tools/MapScale.luau)
+	IslandRadius = 620,
 	TowerCenter = Vector3.new(-10, 6.8, 150), -- base of the tower, in the middle of the island
 	LampPosition = Vector3.new(-10, 95.4, 150),
 	RampBottom = Vector3.new(-10, 7, 190), -- path in front of the door (supply drops land here)
 	RampTop = Vector3.new(-10, 8, 174),
 	DoorFront = Vector3.new(-10, 8.3, 162),
 	CliffTopY = 1000, -- no cliff: disables the old ramp routing
-	IntroBeach = Vector3.new(-10, 8, 432), -- where you wash up after the intro cutscene (south beach)
-	BossPosition = Vector3.new(40, 0, -150), -- open sea north of the tower, clear of the dock
+	IntroBeach = Vector3.new(-10, 8, 714), -- where you wash up after the intro cutscene (south beach)
+	BossPosition = Vector3.new(90, 0, -500), -- open sea north of the tower, clear of the dock
 }
 
 ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ Config.Light = {
 	MinRadiusFraction = 0.45, -- radius when the tank is nearly empty
 	LowFuelFraction = 0.25,
 	LightsOutGrace = 15, -- seconds of alarm before creatures swarm
-	BeamRange = 320, -- the tower is inland now: the beam has to reach the sea
+	BeamRange = 640, -- the tower is inland now: the beam has to reach the sea
 	BeamDegreesPerSecond = 40,
 	BeamHalfWidthDegrees = 7,
 	BeamDamagePerSecond = 20,
@@ -80,7 +80,7 @@ Config.Enemies = {
 	MaxAlive = 60,
 	SpawnInterval = 1.6,
 	SwarmSpawnInterval = 0.8,
-	SpawnRadius = 175, -- creatures walk out of the fog this far from the lighthouse
+	SpawnRadius = 280, -- creatures walk out of the fog this far from the lighthouse
 	PlayerScale = 0.35, -- each extra player adds 35% more creatures (fuel drain doesn't change)
 	-- every storm keeps all the creatures from earlier storms and adds the next kind
 	Order = { "FogCrawler", "Drowned", "NightGull", "FogMimic", "LastKeeper" },
@@ -161,17 +161,17 @@ Config.Hollow = {
 	DragSpeed = 8,
 	HuntDistance = 45,
 	GrabRange = 4.5,
-	FogEdgeRadius = 200,
+	FogEdgeRadius = 320,
 	LightSafeFuelFraction = 0.5, -- the lit area protects you only above half fuel
 	HitsToDriveOff = 3,
 	StrugglesToEscape = 12,
 	FlareRange = 45,
 	FlareCooldown = 40,
 	Lairs = {
-		Vector3.new(-75, 6, -30), -- grove
-		Vector3.new(-28, 3, 140), -- dock
-		Vector3.new(-109, 4, 121), -- wreck beach
-		Vector3.new(120, 4, 20), -- tide pools
+		Vector3.new(-140, 6, -210), -- grove
+		Vector3.new(-46, 3, 130), -- dock
+		Vector3.new(-208, 4, 92), -- wreck beach
+		Vector3.new(250, 4, -110), -- tide pools
 	},
 }
 
@@ -227,10 +227,10 @@ Config.Fish = {
 	Depth = -1.6, -- just under the surface (water level is 0)
 	-- school centres are set from Map.FishingWaters parts if present, else these
 	Schools = {
-		Vector3.new(-30, 0, -175), -- off the lighthouse dock
-		Vector3.new(15, 0, -160),
-		Vector3.new(-120, 0, -105),
-		Vector3.new(170, 0, -60),
+		Vector3.new(-50, 0, -500), -- off the lighthouse dock
+		Vector3.new(40, 0, -470),
+		Vector3.new(-230, 0, -360),
+		Vector3.new(350, 0, -270),
 	},
 }
 
@@ -270,6 +270,25 @@ Config.TreeAnimals = {
 -- The Blender render of the same story is Cutscene_Intro.blend / IntroCutscene.mp4.
 Config.Intro = {
 	Enabled = true,
+	FilmSet = Vector3.new(10, 10, 820), -- streamed in around here while the intro plays (sea, south beach, tower)
+	-- R15 clips made with Studio's animation generator; R6 avatars fall back to the idle
+	Animations = {
+		Row = "rbxassetid://84418772295112", -- seated, rowing at sunset
+		Brace = "rbxassetid://135528348986313", -- seated, gripping the sides in the storm
+		GetUp = "rbxassetid://118813339032476", -- face down on the sand, pushes up, stands
+		IdleR15 = "rbxassetid://507766388",
+		IdleR6 = "rbxassetid://180435571",
+	},
+}
+
+-- Hold Shift to sprint (SprintService / SprintController)
+Config.Sprint = {
+	Multiplier = 1.65, -- 16 -> ~26 studs/s
+	MaxStamina = 100,
+	DrainPerSecond = 14, -- about 7 seconds of running from full
+	RegenPerSecond = 20,
+	RegenDelay = 0.8, -- seconds after you stop before stamina comes back
+	MinToStart = 20, -- after running dry you need this much to sprint again
 }
 
 -- Forage plants (Map.Forage): pick and eat on the spot
@@ -306,7 +325,7 @@ Config.PhaseLook = {
 		Brightness = 3.4,
 		Exposure = 0.35,
 		Ambient = Color3.fromRGB(150, 155, 160),
-		FogDensity = 0.16,
+		FogDensity = 0.12, -- the island is big: keep the tower visible from the shore
 		FogHaze = 0.15,
 		FogColor = Color3.fromRGB(215, 225, 232),
 	},
@@ -331,7 +350,7 @@ Config.PhaseLook = {
 		Brightness = 2.6,
 		Exposure = 0.25,
 		Ambient = Color3.fromRGB(150, 135, 125),
-		FogDensity = 0.24,
+		FogDensity = 0.18,
 		FogHaze = 0.8,
 		FogColor = Color3.fromRGB(230, 190, 160),
 	},

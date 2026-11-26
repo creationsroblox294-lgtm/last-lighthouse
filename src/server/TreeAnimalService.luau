@@ -17,6 +17,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local Movement = require(script.Parent:WaitForChild("Movement"))
 
 local A = Config.TreeAnimals
 local W = Config.World
@@ -140,7 +141,7 @@ local function cleanup(a: Animal)
 		local character = a.target.Character
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 		if humanoid and humanoid.Health > 0 then
-			humanoid.WalkSpeed = Config.Resources.WalkSpeed
+			Movement.SetBase(humanoid, Config.Resources.WalkSpeed)
 		end
 	end
 	a.model:Destroy()
@@ -194,7 +195,7 @@ local function release(a: Animal, shookOff: boolean)
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	if humanoid and humanoid.Health > 0 then
-		humanoid.WalkSpeed = Config.Resources.WalkSpeed
+		Movement.SetBase(humanoid, Config.Resources.WalkSpeed)
 	end
 	if shookOff then
 		Remotes.notify(a.target, `You flung the {string.lower(a.kind)} off!`, "Good")
@@ -243,7 +244,7 @@ local function latch(a: Animal)
 		end
 	end
 	local stats = (A.Kinds :: any)[a.kind]
-	humanoid.WalkSpeed = A.LatchedWalkSpeed
+	Movement.SetBase(humanoid, A.LatchedWalkSpeed)
 	a.target:SetAttribute("Latched", a.kind)
 	a.target:SetAttribute("LatchShakes", stats.Shakes)
 	Remotes.notify(a.target, `A {string.lower(a.kind)} got you! Tap Space / the screen to shake it off!`, "Alarm")
