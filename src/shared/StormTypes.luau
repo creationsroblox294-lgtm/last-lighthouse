@@ -453,7 +453,34 @@ add({
 		Mote = "rbxassetid://72567132198596",
 	},
 })
-planned("HighTide", "High Tide", "Moderate", "The sea is swelling.", "High Tide! The water is rising.")
+add({
+	Id = "HighTide",
+	Name = "High Tide",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "The sea is swelling.",
+	Blurb = "High Tide! The sea is flooding the island. Get to high ground. Things are coming up out of the water.",
+	Color = Color3.fromRGB(110, 190, 180),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 0.9,
+	-- a heaving grey-green flood (Storms/HighTide raises the water; StormFX/HighTide draws it and drags you)
+	Look = {
+		ClockTime = 16.5,
+		Brightness = 1.5,
+		Exposure = -0.05,
+		Ambient = Color3.fromRGB(100, 120, 120),
+		FogDensity = 0.36,
+		FogHaze = 1.8,
+		FogColor = Color3.fromRGB(115, 140, 140),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Splash = "rbxassetid://113883163440180",
+		Ripple = "rbxassetid://136329093448726",
+		Foam = "rbxassetid://119411769037011",
+		Bubble = "rbxassetid://83414063738231",
+	},
+})
 planned("SilentFog", "Silent Fog", "Moderate", "Everything has gone very quiet.", "Silent Fog.")
 planned("FreezingRain", "Freezing Rain", "Moderate", "The temperature is dropping.", "Freezing Rain! The ground is icy.")
 planned("SandstormSurge", "Sandstorm Surge", "Moderate", "Sand is lifting off the beaches.", "Sandstorm Surge! Stay off the shore.")
