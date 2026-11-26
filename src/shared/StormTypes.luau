@@ -182,7 +182,34 @@ add({
 		Twinkle = "rbxassetid://95153044084608",
 	},
 })
-planned("FishRain", "Fish Rain", "Blessed", "A waterspout is dancing out at sea...", "Fish Rain! Free food is falling from the sky.")
+add({
+	Id = "FishRain",
+	Name = "Fish Rain",
+	Tier = "Blessed",
+	Built = true,
+	Forecast = "A waterspout is dancing out at sea...",
+	Blurb = "Fish Rain! The waterspout is dropping fish all over the island. Grab them, and look out for golden ones!",
+	Color = Color3.fromRGB(150, 210, 255),
+	DrainMultiplier = 1.6,
+	EnemyMultiplier = 0.65,
+	-- a bright silver shower under a rainbow (Storms/FishRain drops the fish; StormFX/FishRain draws them)
+	Look = {
+		ClockTime = 16.6,
+		Brightness = 2.4,
+		Exposure = 0.15,
+		Ambient = Color3.fromRGB(110, 125, 150),
+		FogDensity = 0.22,
+		FogHaze = 1.4,
+		FogColor = Color3.fromRGB(120, 145, 175),
+	},
+	Textures = {
+		Drop = "rbxassetid://109078171013574",
+		Splash = "rbxassetid://113883163440180",
+		Glint = "rbxassetid://117341182317330",
+		Rainbow = "rbxassetid://139694757984300",
+		Spray = "rbxassetid://73237222095974",
+	},
+})
 planned("LuckyLightning", "Lucky Lightning", "Blessed", "Dry thunder, and the air smells of pine.", "Lucky Lightning! Bolts are splitting trees into wood.")
 
 ----------------------------------------------------------------- Mild
