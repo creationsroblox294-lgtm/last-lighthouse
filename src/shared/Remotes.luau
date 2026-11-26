@@ -20,6 +20,7 @@ local EVENT_NAMES = {
 	"IntroDone", -- client -> server: () the intro cutscene finished or was skipped
 	"Sprint", -- client -> server: (wants: boolean) holding the sprint key
 	"StormEvent", -- server -> client: (kind: string, data: any) storm-type moments (meteors...)
+	"StormAct", -- client -> server: (kind: string, data: any) a player reacting to a storm (validated per storm)
 }
 
 local Remotes = {}

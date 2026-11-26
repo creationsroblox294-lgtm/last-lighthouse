@@ -481,7 +481,32 @@ add({
 		Bubble = "rbxassetid://83414063738231",
 	},
 })
-planned("SilentFog", "Silent Fog", "Moderate", "Everything has gone very quiet.", "Silent Fog.")
+add({
+	Id = "SilentFog",
+	Name = "Silent Fog",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "Everything has gone very quiet.",
+	Blurb = "Silent Fog. Something is watching from in there. Don't turn your back on the eyes.",
+	Color = Color3.fromRGB(210, 215, 215),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 0.8,
+	-- a pale, dead-still fog (Storms/SilentFog opens the watchers; StormFX/SilentFog draws them)
+	Look = {
+		ClockTime = 13,
+		Brightness = 1.6,
+		Exposure = 0,
+		Ambient = Color3.fromRGB(150, 155, 155),
+		FogDensity = 0.62,
+		FogHaze = 3,
+		FogColor = Color3.fromRGB(200, 205, 205),
+	},
+	Textures = {
+		Haze = "rbxassetid://97891709522639",
+		Wisp = "rbxassetid://136848610196771",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 planned("FreezingRain", "Freezing Rain", "Moderate", "The temperature is dropping.", "Freezing Rain! The ground is icy.")
 planned("SandstormSurge", "Sandstorm Surge", "Moderate", "Sand is lifting off the beaches.", "Sandstorm Surge! Stay off the shore.")
 planned("GhostShip", "Ghost Ship", "Moderate", "A bell is ringing out at sea...", "A Ghost Ship drifts offshore.")
