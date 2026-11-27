@@ -21,6 +21,7 @@ local StormDirector = require(script.Parent:WaitForChild("StormDirector"))
 local LightService = require(script.Parent:WaitForChild("LightService"))
 local ResourceService = require(script.Parent:WaitForChild("ResourceService"))
 local CombatService = require(script.Parent:WaitForChild("CombatService"))
+local Rewards = require(script.Parent:WaitForChild("Rewards"))
 
 local K = Config.Crafting
 local CraftingService = {}
@@ -120,6 +121,7 @@ local function craft(player: Player, recipeId: any)
 		Remotes.notify(nil, `{player.DisplayName} crafted a {r.Name}!`, "Good")
 	end
 	Remotes.event("Crafted"):FireAllClients(player, r.Id)
+	Rewards.Give(player, "Craft")
 end
 
 function CraftingService.Reset()

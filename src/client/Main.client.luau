@@ -4,6 +4,8 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local GameMode = require(Shared:WaitForChild("GameMode"))
+-- the core loop's Brass counter and Keeper's Locker work in the harbor and on the island
+require(script.Parent:WaitForChild("KeeperController")).Start()
 if GameMode.Wait() == "Lobby" then
 	local LobbyController = require(script.Parent:WaitForChild("LobbyController"))
 	LobbyController.Start()

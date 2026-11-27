@@ -98,6 +98,18 @@ local function packTotal(player: Player): number
 	return n
 end
 
+-- backpack space: the base size, plus the Deep Pockets perk (KeeperService sets Own_DeepPockets)
+local POCKETS_PER_TIER = 0
+for _, perk in Config.Keeper.Perks :: { any } do
+	if perk.Id == "DeepPockets" then
+		POCKETS_PER_TIER = perk.PerTier
+	end
+end
+local function packSize(player: Player): number
+	local tier = player:GetAttribute("Own_DeepPockets")
+	return R.BackpackSize + (if typeof(tier) == "number" then tier * POCKETS_PER_TIER else 0)
+end
+
 -- The kind the player picked up last, or any kind they have (nil when the backpack is empty)
 function ResourceService.GetCarried(player: Player): string?
 	local pack = packOf(player)
@@ -122,7 +134,7 @@ function ResourceService.Count(player: Player, kind: string): number
 end
 
 function ResourceService.IsFull(player: Player): boolean
-	return packTotal(player) >= R.BackpackSize
+	return packTotal(player) >= packSize(player)
 end
 
 local function humanoidOf(player: Player): Humanoid?
@@ -191,22 +203,22 @@ local function updatePack(player: Player)
 		player:SetAttribute("Pack_" .. kind, if n > 0 then n else nil)
 	end
 	player:SetAttribute("PackTotal", total)
-	player:SetAttribute("PackSize", R.BackpackSize)
+	player:SetAttribute("PackSize", packSize(player))
 	player:SetAttribute("Carrying", ResourceService.GetCarried(player))
 	local humanoid = humanoidOf(player)
 	if humanoid then
-		local load = math.clamp(total / R.BackpackSize, 0, 1)
+		local load = math.clamp(total / packSize(player), 0, 1)
 		Movement.SetBase(humanoid, R.WalkSpeed - (R.WalkSpeed - R.CarryWalkSpeed) * load)
 	end
 end
 
 local function fullMessage(player: Player)
-	Remotes.notify(player, `Your backpack is full ({R.BackpackSize}). Empty it at the storage chest.`, nil)
+	Remotes.notify(player, `Your backpack is full ({packSize(player)}). Empty it at the storage chest.`, nil)
 end
 
 -- Put items in the backpack. from: where they came from (for the pop-up animation).
 local function add(player: Player, kind: string, amount: number, from: Vector3?): boolean
-	if packTotal(player) + amount > R.BackpackSize then
+	if packTotal(player) + amount > packSize(player) then
 		fullMessage(player)
 		return false
 	end
@@ -447,7 +459,7 @@ local function setupStations(map: Instance)
 	if crateB then
 		addPrompt(crateB, "Take fuel", "Storage", 0, function(player)
 			-- up to R.TakeFuel at a time: oil first, then wood
-			local room = R.BackpackSize - packTotal(player)
+			local room = packSize(player) - packTotal(player)
 			if room <= 0 then
 				fullMessage(player)
 				return

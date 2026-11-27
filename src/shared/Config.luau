@@ -358,12 +358,58 @@ Config.Player = {
 Config.Progress = {
 	XPPerStorm = 10,
 	XPPerLevel = 100,
-	DataStoreName = "PlayerData_v1",
+	DataStoreName = "PlayerData_v1", -- Version 2 adds Brass, RunsWon, Owned, Title, Lantern, DailyDay
 	AutosaveSeconds = 120,
 	-- Create the badges on the Creator Hub, then paste their IDs here (0 = off)
 	Badges = {
 		Storm10 = 0,
 		Storm20 = 0,
+	},
+}
+
+---------------------------------------------------------------------------
+-- The core loop (KeeperService): play -> earn Brass -> upgrade/unlock at the Keeper's Locker
+-- in the harbor -> flex it (titles over your head, a lantern on your belt) -> repeat.
+-- Brass and everything bought with it is saved (DataService) and paid out the moment it's
+-- earned, so quitting mid-run never loses it.
+---------------------------------------------------------------------------
+Config.Keeper = {
+	Earn = {
+		NightBase = 15, -- surviving a storm: NightBase + NightPerStorm * storm number
+		NightPerStorm = 2,
+		Kill = 4, -- each creature your harpoon finishes
+		Repair = 1, -- each repair swing that fixes something (RepairCapPerRun at most)
+		RepairCapPerRun = 40,
+		Craft = 5, -- each thing crafted at the crafting table
+		RunWon = 250, -- keeping the light burning through every storm
+		DailyBonus = 50, -- the first storm you survive each day (UTC)
+	},
+	-- Permanent upgrades; Costs[i] buys tier i
+	Perks = {
+		{ Id = "ThickCoat", Name = "Thick Oilskin Coat", Costs = { 150, 400, 900 }, PerTier = 15,
+			Blurb = "+15 max health per tier. Take a Hollow's swipe and keep going." },
+		{ Id = "DeepPockets", Name = "Deep Pockets", Costs = { 120, 350, 800 }, PerTier = 3,
+			Blurb = "+3 backpack space per tier. Fewer trips to the storage chest." },
+		{ Id = "HeadStart", Name = "Ship's Stores", Costs = { 200, 600 }, PerTier = 1,
+			Blurb = "Each run, bring 2 wood and 1 scrap per tier into the crew's storage." },
+		{ Id = "OldSalt", Name = "Old Salt", Costs = { 300, 800, 1600 }, PerTier = 10,
+			Blurb = "+10% Brass from everything per tier." },
+	},
+	-- A lantern that hangs from your belt and glows: everyone sees it in the dark
+	Lanterns = {
+		{ Id = "Warm", Name = "Ship's Lantern", Cost = 100, Color = Color3.fromRGB(255, 176, 96), Blurb = "A plain brass lantern with a warm flame." },
+		{ Id = "SeaGlass", Name = "Sea-Glass Lantern", Cost = 450, Color = Color3.fromRGB(96, 255, 214), Blurb = "Green glass from a wreck. Glows like shallow water." },
+		{ Id = "Violet", Name = "Storm-Violet Lantern", Cost = 1000, Color = Color3.fromRGB(186, 110, 255), Blurb = "Burns the colour of lightning in a storm cloud." },
+		{ Id = "Gilded", Name = "Gilded Keeper's Lantern", Cost = 2500, Color = Color3.fromRGB(255, 222, 120), Sparkle = true, Blurb = "Solid gold, and it throws sparks. Only real keepers carry one." },
+	},
+	-- Titles over your head. Some are bought; some can only be earned.
+	Titles = {
+		{ Id = "Castaway", Name = "Castaway", Color = Color3.fromRGB(210, 210, 210), Blurb = "Everyone starts somewhere." },
+		{ Id = "Deckhand", Name = "Deckhand", Level = 3, Color = Color3.fromRGB(170, 220, 255), Blurb = "Reach Keeper level 3." },
+		{ Id = "Lamplighter", Name = "Lamplighter", Cost = 150, Color = Color3.fromRGB(255, 200, 110), Blurb = "For the ones who keep the flame fed." },
+		{ Id = "StormChaser", Name = "Storm Chaser", BestStorm = 10, Color = Color3.fromRGB(140, 200, 255), Blurb = "Survive to storm 10." },
+		{ Id = "WaveBreaker", Name = "Wave Breaker", RunsWon = 1, Color = Color3.fromRGB(120, 255, 220), Blurb = "Keep the light burning through every storm." },
+		{ Id = "Keeper", Name = "Keeper of the Light", Cost = 3000, Color = Color3.fromRGB(255, 226, 130), Blurb = "The rarest title on the coast." },
 	},
 }
 

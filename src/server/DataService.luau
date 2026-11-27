@@ -1,5 +1,7 @@
 --!strict
--- DataService: saves each player's Keeper Level (XP), best storm and storms survived.
+-- DataService: saves each player's Keeper Level (XP), best storm, storms survived, and the
+-- core loop's Brass, runs won, what they own at the Keeper's Locker and what they wear
+-- (KeeperService changes those through GetProfile + Changed). Runs on lobby and game servers.
 -- - Session locking: a server marks the profile as its own while the player is in it, so two
 --   servers can't overwrite each other. Stale locks (older than 10 min) are taken over.
 -- - Retries with backoff on every DataStore call, autosave, and BindToClose.
@@ -19,7 +21,19 @@ local PlayerService = require(script.Parent:WaitForChild("PlayerService"))
 local P = Config.Progress
 local DataService = {}
 
-type Profile = { XP: number, BestStorm: number, StormsSurvived: number, Version: number }
+export type Profile = {
+	XP: number,
+	BestStorm: number,
+	StormsSurvived: number,
+	Brass: number, -- to spend
+	BrassEarned: number, -- all-time
+	RunsWon: number,
+	Owned: { [string]: number }, -- perk id -> tier, lantern/title id -> 1
+	Title: string,
+	Lantern: string, -- "" = none
+	DailyDay: number, -- UTC day number of the last daily bonus
+	Version: number,
+}
 
 local profiles: { [Player]: Profile } = {}
 local canSave: { [Player]: boolean } = {}
@@ -27,7 +41,19 @@ local store: DataStore? = nil
 local LOCK_EXPIRE_SECONDS = 600
 
 local function defaultProfile(): Profile
-	return { XP = 0, BestStorm = 0, StormsSurvived = 0, Version = 1 }
+	return {
+		XP = 0,
+		BestStorm = 0,
+		StormsSurvived = 0,
+		Brass = 0,
+		BrassEarned = 0,
+		RunsWon = 0,
+		Owned = {},
+		Title = "Castaway",
+		Lantern = "",
+		DailyDay = 0,
+		Version = 2,
+	}
 end
 
 local function keyFor(player: Player): string
@@ -43,6 +69,15 @@ local function reconcile(data: any): Profile
 			end
 		end
 	end
+	-- only keep sane entries in Owned
+	local owned = {}
+	for id, tier in profile.Owned do
+		if typeof(id) == "string" and typeof(tier) == "number" and tier >= 1 then
+			owned[id] = math.floor(tier)
+		end
+	end
+	profile.Owned = owned
+	profile.Version = 2
 	return profile
 end
 
@@ -65,6 +100,17 @@ local function updateLeaderstats(player: Player)
 		best.Value = profile.BestStorm
 	end
 	player:SetAttribute("KeeperLevel", levelOf(profile))
+	player:SetAttribute("Brass", profile.Brass)
+end
+
+local loadedEvent = Instance.new("BindableEvent")
+-- Fires (player) once their profile is ready (loaded, or a fresh one if saving is off)
+DataService.Loaded = loadedEvent.Event
+
+local function ready(player: Player)
+	updateLeaderstats(player)
+	player:SetAttribute("ProfileLoaded", true)
+	loadedEvent:Fire(player)
 end
 
 local function makeLeaderstats(player: Player)
@@ -84,7 +130,7 @@ local function load(player: Player)
 	local ds = store
 	if not ds then
 		profiles[player] = defaultProfile()
-		updateLeaderstats(player)
+		ready(player)
 		return
 	end
 	local key = keyFor(player)
@@ -107,13 +153,13 @@ local function load(player: Player)
 		if ok and typeof(result) == "table" and typeof(result.lock) == "table" and result.lock.job == game.JobId then
 			profiles[player] = reconcile(result.data)
 			canSave[player] = true
-			updateLeaderstats(player)
+			ready(player)
 			return
 		end
 		task.wait(2 * attempt)
 	end
 	profiles[player] = defaultProfile()
-	updateLeaderstats(player)
+	ready(player)
 	Remotes.notify(player, "Your progress couldn't be loaded, so this session won't be saved.", "Alarm")
 end
 
@@ -178,7 +224,22 @@ function DataService.GetProfile(player: Player): Profile?
 	return profiles[player]
 end
 
+function DataService.LevelOf(profile: Profile): number
+	return levelOf(profile)
+end
+
+-- Call after changing a profile so leaderstats and attributes follow
+function DataService.Changed(player: Player)
+	updateLeaderstats(player)
+end
+
+local started = false
+
 function DataService.Start()
+	if started then
+		return
+	end
+	started = true
 	local ok, ds = pcall(function()
 		return DataStoreService:GetDataStore(P.DataStoreName)
 	end)

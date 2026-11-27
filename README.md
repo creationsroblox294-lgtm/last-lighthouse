@@ -394,3 +394,35 @@ Testing teleports needs the published game (2+ accounts, or one account to try a
 
 - **Everyone sees it:** upgraded tools are tinted (`CombatService.Dress`), and crafting announces "X crafted a Whaler's Harpoon!" to the whole server.
 - Personal upgrades are player attributes (`HarpoonTier`, `HammerTier`, `FlareTier`). Crew upgrades are in `State.Crafting`. Everything resets with `StormDirector.RunReset`.
+
+## Core loop: play → earn → upgrade → unlock → flex → repeat
+Persistent progress that brings players back (`Server/KeeperService`, `Client/KeeperController`, `Config.Keeper`, saved by `DataService`, profile version 2).
+
+- **Earn Brass** on game servers. Brass is paid the moment it's earned and autosaved, so quitting mid-run loses nothing.
+
+  | Action | Brass |
+  |---|---|
+  | Surviving storm *n* | 15 + 2n |
+  | Each creature your harpoon finishes | 4 |
+  | Each repair swing | 1 (max 40 per run) |
+  | Each craft | 5 |
+  | Winning the run | 250 |
+  | First storm survived each day | +50 daily bonus |
+
+- **Upgrade (perks that stay):**
+  - Thick Oilskin Coat: +15 max health per tier, 3 tiers.
+  - Deep Pockets: +3 backpack space per tier, 3 tiers.
+  - Ship's Stores: +2 wood and +1 scrap to crew storage at each run start, per tier, 2 tiers.
+  - Old Salt: +10% Brass per tier, 3 tiers.
+- **Unlock and flex:**
+  - **Lanterns:** glowing belt lanterns that everyone sees in the dark: Ship's 100, Sea-Glass 450, Storm-Violet 1000, Gilded (sparks) 2500.
+  - **Titles:** shown on a nameplate with your Keeper level.
+    - Bought: Lamplighter 150, Keeper of the Light 3000.
+    - Earned only: Deckhand at level 3, Storm Chaser at storm 10, Wave Breaker for a won run.
+  - Buying a lantern or title is announced to the whole server.
+- **Where:** the HUD's Brass counter and **Locker** button work anywhere. In the harbor there's also the Keeper's Locker stall beside the path to the dock (`tools/BuildKeepersLocker.luau`): a striped awning, the four lanterns lit on a shelf, a coat, and a chest of brass.
+- **How it fits together:**
+  - `Server/Rewards` lets gameplay services report kills, repairs and crafts without a require loop.
+  - `StormDirector.RunFinished` reports wins.
+  - DataService and KeeperService now run on lobby servers too.
+- **Studio testing:** set the workspace attribute `KeeperGiveBrass` to a number to pay everyone (Studio only).

@@ -19,6 +19,7 @@ local SharedState = require(Shared:WaitForChild("SharedState"))
 local StormDirector = require(script.Parent:WaitForChild("StormDirector"))
 local LightService = require(script.Parent:WaitForChild("LightService"))
 local ResourceService = require(script.Parent:WaitForChild("ResourceService"))
+local Rewards = require(script.Parent:WaitForChild("Rewards"))
 
 local T = Config.Tower
 local BuildService = {}
@@ -201,6 +202,7 @@ function BuildService.TryRepair(player: Player)
 			end
 			b.health = math.min(T.BarricadeHealth, b.health + T.BarricadeRepairAmount * repairMultiplier(player))
 			b.part:SetAttribute("Health", b.health)
+			Rewards.Give(player, "Repair")
 			return
 		end
 	end
@@ -229,6 +231,7 @@ function BuildService.TryRepair(player: Player)
 		return
 	end
 	BuildService.RepairFloor(target, T.RepairAmount * repairMultiplier(player))
+	Rewards.Give(player, "Repair")
 end
 
 local function makeBarricades()

@@ -26,6 +26,9 @@ local EVENT_NAMES = {
 	"StormAct", -- client -> server: (kind: string, data: any) a player reacting to a storm (validated per storm)
 	"Craft", -- client -> server: (recipeId: string) craft at the crafting table
 	"Crafted", -- server -> client: (crafter: Player, recipeId: string) someone crafted something
+	"KeeperBuy", -- client -> server: (id: string) buy a perk tier, lantern or title at the Keeper's Locker
+	"KeeperEquip", -- client -> server: (slot: "Lantern" | "Title", id: string) wear something you own
+	"Earned", -- server -> client: (amount: number, reason: string) Brass just paid to you
 }
 
 local Remotes = {}

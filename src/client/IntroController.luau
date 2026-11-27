@@ -308,8 +308,8 @@ local function makeTemplate(who: Player): (Model?, number)
 	end
 	actor.Name = "IntroActor"
 	for _, d in actor:GetDescendants() do
-		if d:IsA("LuaSourceContainer") or d:IsA("ForceField") or d:IsA("Tool") then
-			d:Destroy()
+		if d:IsA("LuaSourceContainer") or d:IsA("ForceField") or d:IsA("Tool") or d.Name == "KeeperTag" then
+			d:Destroy() -- (the belt lantern stays: it looks great in the storm)
 		end
 	end
 	noCollide(actor)

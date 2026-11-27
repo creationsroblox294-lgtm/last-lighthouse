@@ -16,6 +16,7 @@ local Debris = game:GetService("Debris")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local EnemyService = require(script.Parent:WaitForChild("EnemyService"))
+local Rewards = require(script.Parent:WaitForChild("Rewards"))
 local BuildService = require(script.Parent:WaitForChild("BuildService"))
 local HollowService = require(script.Parent:WaitForChild("HollowService"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
@@ -198,6 +199,9 @@ local function harpoon(player: Player)
 		streak(root.Position + Vector3.new(0, 1, 0), targetRoot.Position)
 	end
 	target:TakeDamage(harpoonStat(player, Config.Crafting.HarpoonDamage, C.HarpoonDamage))
+	if target.Health <= 0 then
+		Rewards.Give(player, "Kill")
+	end
 end
 
 local function flare(player: Player)

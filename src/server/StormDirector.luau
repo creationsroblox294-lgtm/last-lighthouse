@@ -7,6 +7,7 @@
 --     StormDirector.PhaseChanged:Connect(function(info) ... end)
 --     StormDirector.RunReset:Connect(function() ... end)        -- a new run is starting
 --     StormDirector.StormSurvived:Connect(function(stormNumber) ... end)
+--     StormDirector.RunFinished:Connect(function(won) ... end)      -- the run just ended
 -- - A boss can keep the storm going with StormDirector.HoldStorm(name, predicate, maxSeconds).
 --
 -- This is the only server module allowed a long-running phase loop (see DESIGN.md, Tech plan).
@@ -34,6 +35,8 @@ local runResetEvent = Instance.new("BindableEvent")
 StormDirector.RunReset = runResetEvent.Event
 local stormSurvivedEvent = Instance.new("BindableEvent")
 StormDirector.StormSurvived = stormSurvivedEvent.Event
+local runFinishedEvent = Instance.new("BindableEvent")
+StormDirector.RunFinished = runFinishedEvent.Event
 
 local rng = Random.new()
 local started = false
@@ -232,6 +235,7 @@ local function loop()
 		runResetEvent:Fire()
 		local won = runOnce()
 		holding = false
+		runFinishedEvent:Fire(won)
 		if won then
 			currentPhase = "Won"
 			phaseEndsAt = now() + 30
