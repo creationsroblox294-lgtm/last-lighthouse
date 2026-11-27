@@ -221,6 +221,9 @@ local function runOnce(): boolean
 	return true
 end
 
+-- Called after a run's end screen; return true to stop (e.g. the party is sent home)
+local runEndedHandler: ((won: boolean) -> boolean)? = nil
+
 local function loop()
 	while true do
 		lostReason = nil
@@ -235,14 +238,25 @@ local function loop()
 			publish()
 			Remotes.notify(nil, `You kept the light burning through {Config.MaxStorms} storms!`, "Good")
 			task.wait(30)
+			if runEndedHandler and runEndedHandler(true) then
+				return
+			end
 		else
 			currentPhase = "Lost"
 			phaseEndsAt = now() + Config.LostScreenSeconds
 			runState:SetAttribute("LostReason", lostReason or "The light went out.")
 			publish()
 			task.wait(Config.LostScreenSeconds)
+			if runEndedHandler and runEndedHandler(false) then
+				return
+			end
 		end
 	end
+end
+
+-- What happens when a run is over (after its end screen). Return true to end the loop.
+function StormDirector.OnRunEnded(fn: (won: boolean) -> boolean)
+	runEndedHandler = fn
 end
 
 -- Keep the storm going while predicate() is true, for at most maxSeconds from now

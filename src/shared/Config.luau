@@ -449,4 +449,15 @@ Config.UI = {
 	},
 }
 
+---------------------------------------------------------------------------
+-- The harbor lobby (public servers). Boats take parties of 1-4 to their own game.
+---------------------------------------------------------------------------
+Config.Lobby = {
+	Center = Vector3.new(3200, 0, 0), -- Workspace.Lobby is built here (tools/BuildLobby.luau)
+	PartySize = 4, -- seats per boat
+	Countdown = 15, -- seconds from the first person boarding until the boat casts off
+	CastOffSeconds = 4, -- the boat rows out this long before the teleport
+	ReturnDelay = 6, -- game servers: seconds after the end screen before everyone goes home
+}
+
 return Config

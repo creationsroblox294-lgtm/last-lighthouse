@@ -319,3 +319,40 @@ They live in `ServerStorage.ToolModels.<Tool>`, and `CombatService` builds the t
 | Harpoon (ash shaft, rope grips, barbed leaf head) | 116672645311335 |
 | Hammer (claw hammer, leather-wrapped grip) | 138355564212074 |
 | Flare gun (orange flare pistol) | 113042351024430 |
+
+## Harbor lobby and parties (up to 4)
+
+Players now load into a **harbor at dusk** (`Workspace.Lobby`, built by `tools/BuildLobby.luau` at x≈3200, far from the island).
+One place, two modes (`Shared/GameMode`):
+
+| Server | Mode | What runs |
+|---|---|---|
+| Public server | Lobby | `Server/LobbyService` + `Client/LobbyController` only. The island (`Map`) is parked in `ServerStorage.Parked`. |
+| Reserved server (one per party) | Game | Everything as before. `Lobby` is parked. |
+| Studio | Lobby, then Game | A boat casting off switches this server into the game, because teleports don't work in Studio. Set Workspace attribute `ForceMode = "Game"` (or `"Lobby"`) to skip straight to one. |
+
+**Parties.** Four rowboats are moored at the dock. Walk onto one to board (up to `Config.Lobby.PartySize` = 4).
+- The first person aboard starts a 15s countdown. Others can hop on or off ("Leave boat" button) until it ends.
+- Then the boat casts off: the party is seated and the boat rows out to sea with them in it, and their screens fade. The server reserves a private server and teleports the party together (`TeleportData = { party, boat }`).
+- If the teleport fails, everyone is put back on the dock.
+- On the party's server, when the run ends (won or lost), `StormDirector.OnRunEnded` sends everyone back to the harbor after `ReturnDelay`.
+
+**Harbor life (all client-side in `LobbyController`).**
+- The sky and sea: sunset over the sea past the end of the dock, with a custom atmosphere, bloom, sun rays and darker, reflective water.
+- Things on the water: boats rocking at their moorings, buoys bobbing with blinking lights, fish leaping out of the water with splashes.
+- Lights and props: lanterns swinging and flickering, the ship's bell swaying.
+- Gulls circling, flapping and gliding.
+- The distant lighthouse beam sweeping.
+- Chimney smoke, fireflies, sea mist, splashes at the pilings, a campfire with embers.
+- Grass that sways in the wind, plus trees from `TreeLibrary`.
+- Sounds: waves and distant gulls.
+- Each boat has a sign showing who's aboard and the countdown.
+
+Testing teleports needs the published game (2+ accounts, or one account to try a solo boat).
+
+## Flare shot and upright hammer
+- **Flare gun:** `Client/FlareController` runs the whole shot, and every client sees it (`FlareFired(at, shooter)`).
+  1. The gun raises and kicks back (recoil on the hand grip), with a muzzle flash, smoke, sparks and a camera shake for the shooter.
+  2. A red round climbs steeply, trailing smoke.
+  3. It pops, a parachute opens, and the flare burns red for 12s, swinging and drifting down while lighting the ground (with shadows).
+- **Hammer:** now held upright, head on top with the striking face forward (`CombatService` `HOLD.Hammer.pitch = 90`).

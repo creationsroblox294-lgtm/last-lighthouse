@@ -37,11 +37,12 @@ local LOOKS: { [string]: { material: Enum.Material, color: Color3 } } = {
 }
 
 -- Per tool: model scale, and where the hand holds it (in model space, before scaling)
--- roll: turn about the tool's long axis (the hammer head stands upright, face down)
-local HOLD: { [string]: { scale: number, grip: Vector3, roll: number } } = {
-	Harpoon = { scale = 0.8, grip = Vector3.new(0, 0, 0), roll = 0 },
-	Hammer = { scale = 1.15, grip = Vector3.new(0, 0, -0.45), roll = 90 },
-	Flare = { scale = 1.4, grip = Vector3.new(0, 0.12, 0), roll = 0 },
+-- roll: turn about the tool's long axis; pitch: tip up from forward (the hammer is held
+-- upright, head on top with the face forward)
+local HOLD: { [string]: { scale: number, grip: Vector3, roll: number, pitch: number } } = {
+	Harpoon = { scale = 0.8, grip = Vector3.new(0, 0, 0), roll = 0, pitch = 0 },
+	Hammer = { scale = 1.15, grip = Vector3.new(0, 0, -0.45), roll = 90, pitch = 90 },
+	Flare = { scale = 1.4, grip = Vector3.new(0, 0.12, 0), roll = 0, pitch = 0 },
 }
 
 -- Fallback greybox tool (used only if the Blender model is missing)
@@ -85,7 +86,7 @@ local function modelTool(name: string): Tool?
 	if not source then
 		return nil
 	end
-	local hold = HOLD[name] or { scale = 1, grip = Vector3.zero, roll = 0 }
+	local hold = HOLD[name] or { scale = 1, grip = Vector3.zero, roll = 0, pitch = 0 }
 	local tool = Instance.new("Tool")
 	tool.Name = name
 	tool.CanBeDropped = false
@@ -101,7 +102,7 @@ local function modelTool(name: string): Tool?
 	handle.CFrame = CFrame.new()
 	handle.Parent = tool
 	-- model space -> handle space: flip so the tip points along -Z (a tool's forward)
-	local flip = CFrame.Angles(0, math.pi, 0) * CFrame.Angles(0, 0, math.rad(hold.roll))
+	local flip = CFrame.Angles(math.rad(hold.pitch), 0, 0) * CFrame.Angles(0, math.pi, 0) * CFrame.Angles(0, 0, math.rad(hold.roll))
 	for _, piece in source:GetDescendants() do
 		if not piece:IsA("MeshPart") then
 			continue
@@ -199,7 +200,7 @@ local function flare(player: Player)
 	end
 	lastFlare[player] = t
 	local at = root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 8, 0)
-	Remotes.event("FlareFired"):FireAllClients(at)
+	Remotes.event("FlareFired"):FireAllClients(at, player)
 	if HollowService.Flare(root.Position) then
 		Remotes.notify(player, "The flare drove the Hollow back!", "Good")
 	end

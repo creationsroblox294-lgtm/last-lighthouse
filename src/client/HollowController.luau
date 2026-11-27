@@ -3,7 +3,6 @@
 --   * while the Hollow is out: nearby lights flicker, frost creeps over the screen edges
 --     and a low hum rises the closer it gets
 --   * when it grabs you: a "STRUGGLE!" prompt; every Space / tap / button press is sent
---   * flare flashes for everyone
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -100,36 +99,6 @@ function HollowController.Start()
 
 	player:GetAttributeChangedSignal("Grabbed"):Connect(function()
 		struggle.Visible = player:GetAttribute("Grabbed") == true
-	end)
-
-	Remotes.event("FlareFired").OnClientEvent:Connect(function(at: Vector3)
-		local p = Instance.new("Part")
-		p.Anchored = true
-		p.CanCollide = false
-		p.CanQuery = false
-		p.Shape = Enum.PartType.Ball
-		p.Size = Vector3.new(1.2, 1.2, 1.2)
-		p.Material = Enum.Material.Neon
-		p.Color = Color3.fromRGB(255, 80, 50)
-		p.Position = at
-		local l = Instance.new("PointLight")
-		l.Color = Color3.fromRGB(255, 90, 60)
-		l.Range = 60
-		l.Brightness = 6
-		l.Parent = p
-		p.Parent = Workspace
-		Debris:AddItem(p, 6)
-		local t0 = os.clock()
-		local conn
-		conn = RunService.Heartbeat:Connect(function()
-			local k = os.clock() - t0
-			if not p.Parent then
-				conn:Disconnect()
-				return
-			end
-			p.Position = at + Vector3.new(0, k * 1.5, 0)
-			l.Brightness = math.max(0, 6 - k)
-		end)
 	end)
 
 	-- flicker nearby lights while it's near

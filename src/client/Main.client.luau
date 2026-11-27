@@ -1,5 +1,15 @@
 --!strict
--- Client entry point: starts each controller.
+-- Client entry point. In the harbor lobby only LobbyController runs; on a game server
+-- (or once a Studio test casts off) every game controller starts.
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local GameMode = require(Shared:WaitForChild("GameMode"))
+if GameMode.Wait() == "Lobby" then
+	local LobbyController = require(script.Parent:WaitForChild("LobbyController"))
+	LobbyController.Start()
+	GameMode.WaitFor("Game")
+	LobbyController.Stop()
+end
 
 local FogController = require(script.Parent:WaitForChild("FogController"))
 local LightController = require(script.Parent:WaitForChild("LightController"))
@@ -16,6 +26,7 @@ local MinimapController = require(script.Parent:WaitForChild("MinimapController"
 local StormFXController = require(script.Parent:WaitForChild("StormFXController"))
 local StormReactionController = require(script.Parent:WaitForChild("StormReactionController"))
 local BackpackController = require(script.Parent:WaitForChild("BackpackController"))
+local FlareController = require(script.Parent:WaitForChild("FlareController"))
 
 FogController.Start()
 LightController.Start()
@@ -31,6 +42,7 @@ MinimapController.Start()
 StormFXController.Start()
 StormReactionController.Start()
 BackpackController.Start()
+FlareController.Start()
 task.spawn(IntroController.Start)
 
 -- Preload the tool meshes (Harpoon, Hammer, Flare) so they don't pop in on first equip
