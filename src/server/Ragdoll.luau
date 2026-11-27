@@ -1,7 +1,8 @@
 --!strict
 -- Ragdoll: on death, a character's joints go limp instead of the body breaking apart.
--- Every Motor6D is swapped for a BallSocketConstraint with human-like limits, so the body
--- folds, slumps and tumbles with real physics. Works for R15 and R6 characters.
+-- Every joint is swapped for a BallSocketConstraint with human-like limits, so the body
+-- folds, slumps and tumbles with real physics. Works for R15 and R6 characters, with either
+-- classic Motor6D joints or the newer AnimationConstraint joints some avatars use.
 
 local Ragdoll = {}
 
@@ -23,34 +24,58 @@ function Ragdoll.apply(character: Model, impulse: Vector3?)
 		humanoid.BreakJointsOnDeath = false
 		humanoid.RequiresNeck = false
 	end
-	for _, motor in character:GetDescendants() do
-		if motor:IsA("Motor6D") and motor.Part0 and motor.Part1 then
-			local part0, part1 = motor.Part0 :: BasePart, motor.Part1 :: BasePart
-			if part0.Name == "HumanoidRootPart" or part1.Name == "HumanoidRootPart" then
-				continue -- keep the root attached to the lower torso
+	for _, joint in character:GetDescendants() do
+		-- where each joint is: its two parts and the joint frame in each of them
+		local part0: BasePart?, part1: BasePart?
+		local a0: Attachment?, a1: Attachment?
+		if joint:IsA("Motor6D") and joint.Part0 and joint.Part1 then
+			part0, part1 = joint.Part0, joint.Part1
+		elseif joint:IsA("AnimationConstraint") and joint.Attachment0 and joint.Attachment1 then
+			a0, a1 = joint.Attachment0, joint.Attachment1
+			local p0, p1 = (a0 :: Attachment).Parent, (a1 :: Attachment).Parent
+			if p0 and p0:IsA("BasePart") and p1 and p1:IsA("BasePart") then
+				part0, part1 = p0, p1
 			end
-			local a0 = Instance.new("Attachment")
-			a0.Name = "RagdollA0"
-			a0.CFrame = motor.C0
-			a0.Parent = part0
-			local a1 = Instance.new("Attachment")
-			a1.Name = "RagdollA1"
-			a1.CFrame = motor.C1
-			a1.Parent = part1
-			local joint = Instance.new("BallSocketConstraint")
-			joint.Name = "RagdollJoint"
-			joint.Attachment0 = a0
-			joint.Attachment1 = a1
-			local limit = LIMITS[motor.Name] or { cone = 45, twist = 20 }
-			joint.LimitsEnabled = true
-			joint.UpperAngle = limit.cone
-			joint.TwistLimitsEnabled = true
-			joint.TwistLowerAngle = -limit.twist
-			joint.TwistUpperAngle = limit.twist
-			joint.Restitution = 0
-			joint.Parent = part1
-			motor.Enabled = false
 		end
+		if not part0 or not part1 then
+			continue
+		end
+		if part0.Name == "HumanoidRootPart" or part1.Name == "HumanoidRootPart" then
+			-- keep the root attached to the lower torso (newer avatars can let go of their
+			-- root joint on death, so pin it with a weld as well)
+			if joint:IsA("AnimationConstraint") then
+				local pin = Instance.new("WeldConstraint")
+				pin.Name = "RagdollRootPin"
+				pin.Part0 = part0
+				pin.Part1 = part1
+				pin.Parent = part0
+			end
+			continue
+		end
+		if joint:IsA("Motor6D") then
+			local m0 = Instance.new("Attachment")
+			m0.Name = "RagdollA0"
+			m0.CFrame = joint.C0
+			m0.Parent = part0
+			local m1 = Instance.new("Attachment")
+			m1.Name = "RagdollA1"
+			m1.CFrame = joint.C1
+			m1.Parent = part1
+			a0, a1 = m0, m1
+		end
+		local socket = Instance.new("BallSocketConstraint")
+		socket.Name = "RagdollJoint"
+		socket.Attachment0 = a0
+		socket.Attachment1 = a1
+		local limit = LIMITS[joint.Name] or { cone = 45, twist = 20 }
+		socket.LimitsEnabled = true
+		socket.UpperAngle = limit.cone
+		socket.TwistLimitsEnabled = true
+		socket.TwistLowerAngle = -limit.twist
+		socket.TwistUpperAngle = limit.twist
+		socket.Restitution = 0
+		socket.Parent = part1
+		;(joint :: any).Enabled = false
 	end
 	for _, part in character:GetDescendants() do
 		if part:IsA("BasePart") then

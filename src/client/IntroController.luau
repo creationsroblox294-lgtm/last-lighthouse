@@ -369,13 +369,22 @@ local function ragdoll(actor: Model, velocity: Vector3, spin: Vector3)
 		end
 	end
 	for _, m in actor:GetDescendants() do
+		-- classic Motor6D joints, or the AnimationConstraint joints newer avatars use
+		local a0: Attachment?, a1: Attachment?
+		local holder: Instance? = nil
 		if m:IsA("Motor6D") and m.Part0 and m.Part1 then
-			local a0 = Instance.new("Attachment")
-			a0.CFrame = m.C0
-			a0.Parent = m.Part0
-			local a1 = Instance.new("Attachment")
-			a1.CFrame = m.C1
-			a1.Parent = m.Part1
+			local n0 = Instance.new("Attachment")
+			n0.CFrame = m.C0
+			n0.Parent = m.Part0
+			local n1 = Instance.new("Attachment")
+			n1.CFrame = m.C1
+			n1.Parent = m.Part1
+			a0, a1, holder = n0, n1, m.Part0
+		elseif m:IsA("AnimationConstraint") and m.Attachment0 and m.Attachment1 then
+			a0, a1 = m.Attachment0, m.Attachment1
+			holder = (a0 :: Attachment).Parent
+		end
+		if a0 and a1 and holder then
 			local joint = Instance.new("BallSocketConstraint")
 			joint.Attachment0 = a0
 			joint.Attachment1 = a1
@@ -384,8 +393,8 @@ local function ragdoll(actor: Model, velocity: Vector3, spin: Vector3)
 			joint.TwistLimitsEnabled = true
 			joint.TwistLowerAngle = -40
 			joint.TwistUpperAngle = 40
-			joint.Parent = m.Part0
-			m.Enabled = false
+			joint.Parent = holder
+			;(m :: any).Enabled = false
 		end
 	end
 	for _, p in actor:GetDescendants() do
