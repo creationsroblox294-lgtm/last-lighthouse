@@ -95,17 +95,36 @@ function UISkin.bar(back: GuiObject, fill: GuiObject): Frame
 	})
 	shine.Parent = fill
 	local inset = UI.BarInset -- left, top, right, bottom in image pixels
+	-- the brass is drawn thinner than the art's own proportions so the slot (and the text
+	-- in it) gets most of the bar's height
+	local labels: { TextLabel } = {}
+	for _, c in back:GetChildren() do
+		if c:IsA("TextLabel") then
+			table.insert(labels, c)
+		end
+	end
 	onSize(back, function(size)
-		local s = size.Y / UI.BarHeight
+		local s = size.Y / (UI.BarHeight * 1.8)
 		skin.SliceScale = s
 		slot.Position = UDim2.fromOffset(inset[1] * s, inset[2] * s)
 		slot.Size = UDim2.new(1, -(inset[1] + inset[3]) * s, 1, -(inset[2] + inset[4]) * s)
-	end)
-	-- labels sit on top of the brass
-	for _, c in back:GetChildren() do
-		if c:IsA("TextLabel") then
-			c.ZIndex = 3
+		local slotH = size.Y - (inset[2] + inset[4]) * s
+		for _, l in labels do
+			local limit = l:FindFirstChildOfClass("UITextSizeConstraint")
+			if limit then
+				limit.MaxTextSize = math.max(1, math.floor(slotH * 0.92))
+				limit.MinTextSize = 1
+			end
 		end
+	end)
+	-- labels go inside the slot, over the liquid, filling its height
+	for _, l in labels do
+		l.AnchorPoint = Vector2.new(0, 0.5)
+		l.Position = UDim2.new(0, 8, 0.5, 0)
+		l.Size = UDim2.new(1, -16, 0.96, 0)
+		l.TextScaled = true
+		l.ZIndex = 3
+		l.Parent = slot
 	end
 	return slot
 end
