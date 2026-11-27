@@ -564,7 +564,34 @@ add({
 		Smoke = "rbxassetid://79085558579719",
 	},
 })
-planned("GhostShip", "Ghost Ship", "Moderate", "A bell is ringing out at sea...", "A Ghost Ship drifts offshore.")
+add({
+	Id = "GhostShip",
+	Name = "Ghost Ship",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "A bell is ringing out at sea...",
+	Blurb = "A Ghost Ship drifts offshore. Keep out of its lantern's light, because when the bell tolls, the drowned crew come for whoever it found.",
+	Color = Color3.fromRGB(120, 255, 200),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 0.6,
+	-- a still green night (Storms/GhostShip sails the ship and tolls the bell; StormFX/GhostShip draws it)
+	Look = {
+		ClockTime = 0.2,
+		Brightness = 2,
+		Exposure = 0.45,
+		Ambient = Color3.fromRGB(80, 125, 110),
+		FogDensity = 0.12,
+		FogHaze = 1,
+		FogColor = Color3.fromRGB(35, 70, 62),
+	},
+	Textures = {
+		BellRing = "rbxassetid://124442909298876",
+		Haze = "rbxassetid://97891709522639",
+		Wisp = "rbxassetid://136848610196771",
+		Glow = "rbxassetid://133210713162638",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 planned("WildSwarm", "Wild Swarm", "Moderate", "The trees are rustling. Something is restless.", "Wild Swarm! The tree animals are frenzied.")
 
 ----------------------------------------------------------------- Severe
