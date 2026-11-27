@@ -882,7 +882,37 @@ add({
 		Vignette = "rbxassetid://134594259515631",
 	},
 })
-planned("Cursed", "Cursed Storm", "Catastrophic", "???", "A Cursed Storm!")
+add({
+	Id = "Cursed",
+	Name = "Cursed Storm",
+	Tier = "Catastrophic",
+	Built = true,
+	Forecast = "???",
+	Blurb = "A Cursed Storm! Something is watching. Keep moving, keep to the light, and read the sky.",
+	Color = Color3.fromRGB(120, 255, 150),
+	DrainMultiplier = 3.8,
+	EnemyMultiplier = 1.2,
+	-- a bruised violet-green sky (Storms/Cursed lays the curses; StormFX/Cursed draws them)
+	Look = {
+		ClockTime = 18.6,
+		Brightness = 2.4,
+		Exposure = 0.25,
+		Ambient = Color3.fromRGB(140, 120, 160),
+		FogDensity = 0.3,
+		FogHaze = 2,
+		FogColor = Color3.fromRGB(85, 70, 105),
+	},
+	Textures = {
+		Sclera = "rbxassetid://104322264905007",
+		Iris = "rbxassetid://133713611591220",
+		Lid = "rbxassetid://95947293197360",
+		Hand = "rbxassetid://139728649540016",
+		Sigil = "rbxassetid://71709397795561",
+		Ember = "rbxassetid://110074077788286",
+		Leaf = "rbxassetid://105999470506423",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 
 StormTypes.List = list
 
