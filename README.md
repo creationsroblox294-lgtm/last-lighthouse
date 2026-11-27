@@ -331,8 +331,11 @@ One place, two modes (`Shared/GameMode`):
 | Reserved server (one per party) | Game | Everything as before. `Lobby` is parked. |
 | Studio | Lobby, then Game | A boat casting off switches this server into the game, because teleports don't work in Studio. Set Workspace attribute `ForceMode = "Game"` (or `"Lobby"`) to skip straight to one. |
 
-**Parties.** Four rowboats are moored at the dock. Walk onto one to board (up to `Config.Lobby.PartySize` = 4).
-- The first person aboard starts a 15s countdown. Others can hop on or off ("Leave boat" button) until it ends.
+**Parties.** Four rowboats are moored at the dock.
+- Step onto an empty boat and you **create its party**: a picker asks for Solo, 2, 3 or 4 sailors (`ChooseParty` remote). While you choose, the boat is reserved, and anyone else is put back on the dock with "(name) is setting up this boat".
+- Then up to that many can board. Each boat's sign shows "Party of 3 · 2/3 aboard · Room for 1 more!" with one lamp per seat.
+- When the party is full, a `FullCountdown` (5s) starts. If someone steps off, it stops.
+- The leader can change the size ("Party size" button), but not below how many are aboard. If the leader steps off, the next one aboard leads. An empty boat resets to free.
 - Then the boat casts off: the party is seated and the boat rows out to sea with them in it, and their screens fade. The server reserves a private server and teleports the party together (`TeleportData = { party, boat }`).
 - If the teleport fails, everyone is put back on the dock.
 - On the party's server, when the run ends (won or lost), `StormDirector.OnRunEnded` sends everyone back to the harbor after `ReturnDelay`.

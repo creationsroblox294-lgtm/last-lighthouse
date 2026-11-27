@@ -7,9 +7,12 @@
 --   fish leaping out of the water, the far lighthouse sweeping its beam through the mist,
 --   waves and gull calls.
 -- Parties:
---   a sign over each boat shows who's aboard and the countdown; when you're aboard a panel
---   shows the same with a "Leave boat" button. When a boat casts off it rows out to sea
---   (carrying its passengers) and your screen fades out on the way to the lighthouse.
+--   step onto an empty boat and you create its party: pick Solo, 2, 3 or 4 sailors. Others
+--   can then join until it's full; when it's full it sets sail after a short countdown.
+--   A sign over each boat shows its party (size, who's aboard, the countdown); when you're
+--   aboard a panel shows the same with "Leave boat" (and "Party size" for the leader).
+--   When a boat casts off it rows out to sea (carrying its passengers) and your screen
+--   fades out on the way to the lighthouse.
 
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -285,6 +288,10 @@ type Ui = {
 	aboardTitle: TextLabel,
 	aboardInfo: TextLabel,
 	leave: TextButton,
+	change: TextButton,
+	picker: Frame,
+	pickerInfo: TextLabel,
+	sizes: { TextButton },
 	fade: Frame,
 	fadeText: TextLabel,
 	hint: TextLabel,
@@ -330,7 +337,7 @@ local function makeUi(): Ui
 	maxSize.MaxSize = Vector2.new(460, 108)
 	maxSize.Parent = title
 	title.Parent = gui
-	local hint = label(gui, "Step onto a boat to set sail  ·  1 to 4 sailors per boat", UDim2.new(0.6, 0, 0, 26), UDim2.new(0.2, 0, 0, 162), Enum.Font.GothamBold, 20)
+	local hint = label(gui, "Step onto an empty boat to start a party (1-4 sailors), or join one with room", UDim2.new(0.7, 0, 0, 26), UDim2.new(0.15, 0, 0, 162), Enum.Font.GothamBold, 20)
 	hint.TextTransparency = 0.05
 	-- aboard panel (bottom centre)
 	local aboard = Instance.new("Frame")
@@ -343,21 +350,48 @@ local function makeUi(): Ui
 	UISkin.panel(aboard)
 	local aboardTitle = label(aboard, "BOAT 1", UDim2.new(0.86, 0, 0, 34), UDim2.new(0.07, 0, 0, 14), Enum.Font.GothamBlack, 30, Color3.fromRGB(255, 214, 120))
 	local aboardInfo = label(aboard, "", UDim2.new(0.86, 0, 0, 26), UDim2.new(0.07, 0, 0, 50), Enum.Font.GothamBold, 22)
-	local leave = Instance.new("TextButton")
+	local function button(parent: Instance, text: string, size: UDim2, pos: UDim2, maxText: number): TextButton
+		local b = Instance.new("TextButton")
+		b.AnchorPoint = Vector2.new(0.5, 0)
+		b.Position = pos
+		b.Size = size
+		b.Font = Enum.Font.GothamBold
+		b.Text = text
+		b.TextScaled = true
+		local c = Instance.new("UITextSizeConstraint")
+		c.MaxTextSize = maxText
+		c.Parent = b
+		b.ZIndex = 3
+		b.Parent = parent
+		UISkin.button(b)
+		return b
+	end
+	local leave = button(aboard, "Leave boat", UDim2.new(0, 170, 0, 48), UDim2.new(0.5, -92, 0, 86), 22)
 	leave.Name = "Leave"
-	leave.AnchorPoint = Vector2.new(0.5, 0)
-	leave.Position = UDim2.new(0.5, 0, 0, 86)
-	leave.Size = UDim2.new(0, 190, 0, 48)
-	leave.Font = Enum.Font.GothamBold
-	leave.Text = "Leave boat"
-	leave.TextScaled = true
-	local lc = Instance.new("UITextSizeConstraint")
-	lc.MaxTextSize = 22
-	lc.Parent = leave
-	leave.ZIndex = 3
-	leave.Parent = aboard
-	UISkin.button(leave)
+	local change = button(aboard, "Party size", UDim2.new(0, 170, 0, 48), UDim2.new(0.5, 92, 0, 86), 22)
+	change.Name = "ChangeSize"
 	aboard.Parent = gui
+	-- party picker (the boat's leader): how many sailors?
+	local picker = Instance.new("Frame")
+	picker.Name = "PartyPicker"
+	picker.AnchorPoint = Vector2.new(0.5, 0.5)
+	picker.Position = UDim2.fromScale(0.5, 0.5)
+	picker.Size = UDim2.new(0, 520, 0, 250)
+	picker.BackgroundTransparency = 1
+	picker.Visible = false
+	UISkin.panel(picker)
+	label(picker, "CREATE YOUR PARTY", UDim2.new(0.86, 0, 0, 36), UDim2.new(0.07, 0, 0, 18), Enum.Font.GothamBlack, 32, Color3.fromRGB(255, 214, 120))
+	local pickerInfo = label(picker, "How many sailors on this boat?", UDim2.new(0.86, 0, 0, 24), UDim2.new(0.07, 0, 0, 58), Enum.Font.GothamBold, 21)
+	local sizes: { TextButton } = {}
+	for n = 1, Config.Lobby.PartySize do
+		local x = (n - (Config.Lobby.PartySize + 1) / 2) * 112
+		local b = button(picker, if n == 1 then "Solo" else tostring(n), UDim2.new(0, 100, 0, 72), UDim2.new(0.5, x, 0, 100), 30)
+		b.Name = "Size" .. n
+		table.insert(sizes, b)
+	end
+	local note = label(picker, "Others can join until it's full, then you set sail.", UDim2.new(0.86, 0, 0, 20), UDim2.new(0.07, 0, 0, 190), Enum.Font.Gotham, 17, Color3.fromRGB(200, 210, 225))
+	note.Name = "Note"
+	picker.Parent = gui
 	-- fade to black when your boat leaves
 	local fade = Instance.new("Frame")
 	fade.Name = "Fade"
@@ -372,7 +406,20 @@ local function makeUi(): Ui
 	fadeText.TextStrokeTransparency = 1
 	gui.Parent = player:WaitForChild("PlayerGui")
 	keep(gui)
-	return { gui = gui, aboard = aboard, aboardTitle = aboardTitle, aboardInfo = aboardInfo, leave = leave, fade = fade, fadeText = fadeText, hint = hint }
+	return {
+		gui = gui,
+		aboard = aboard,
+		aboardTitle = aboardTitle,
+		aboardInfo = aboardInfo,
+		leave = leave,
+		change = change,
+		picker = picker,
+		pickerInfo = pickerInfo,
+		sizes = sizes,
+		fade = fade,
+		fadeText = fadeText,
+		hint = hint,
+	}
 end
 
 -- Sign over each boat: name, sailors aboard (as lamp dots) and the countdown
@@ -396,8 +443,8 @@ local function makeSign(boat: Model): Sign?
 	UISkin.panel(back)
 	local number = boat:GetAttribute("Number") or 1
 	local title = label(back, `BOAT {number}`, UDim2.fromScale(0.8, 0.26), UDim2.fromScale(0.1, 0.1), Enum.Font.GothamBlack, 60, Color3.fromRGB(255, 214, 120))
-	local count = label(back, "0 / 4 aboard", UDim2.fromScale(0.8, 0.18), UDim2.fromScale(0.1, 0.37), Enum.Font.GothamBold, 44)
-	local time = label(back, "Step aboard to set sail", UDim2.fromScale(0.8, 0.15), UDim2.fromScale(0.1, 0.56), Enum.Font.Gotham, 36, Color3.fromRGB(200, 210, 225))
+	local count = label(back, "Free boat", UDim2.fromScale(0.8, 0.18), UDim2.fromScale(0.1, 0.37), Enum.Font.GothamBold, 44)
+	local time = label(back, "Step aboard to start a party", UDim2.fromScale(0.8, 0.15), UDim2.fromScale(0.1, 0.56), Enum.Font.Gotham, 36, Color3.fromRGB(200, 210, 225))
 	local dots = {}
 	for i = 1, Config.Lobby.PartySize do
 		local d = Instance.new("Frame")
@@ -524,6 +571,7 @@ function LobbyController.Start()
 	-- passengers being carried by a departing boat: character -> offset from the hull
 	local carried: { [Model]: { boat: BoatInfo, offset: CFrame } } = {}
 	local myCastOff = 0
+	local pickerOpen = false -- the leader pressed "Party size" to change it
 
 	local function boatCFrame(b: BoatInfo, t: number, clock: number): CFrame
 		-- rocking at the mooring
@@ -549,26 +597,72 @@ function LobbyController.Start()
 	local function refresh()
 		local mine = player:GetAttribute("Boat")
 		local shown = false
+		local picking = false
 		for _, b in boats do
 			local m = b.model
 			local count = (m:GetAttribute("Count") or 0) :: number
 			local leaves = (m:GetAttribute("LeavesAt") or 0) :: number
 			local castAt = (m:GetAttribute("CastOffAt") or 0) :: number
-			local cap = (m:GetAttribute("Capacity") or Config.Lobby.PartySize) :: number
+			local cap = (m:GetAttribute("Capacity") or 0) :: number -- 0: the leader is still choosing
+			local leader = (m:GetAttribute("Leader") or 0) :: number
+			local leaderName = (m:GetAttribute("LeaderName") or "") :: string
 			local left = math.max(0, math.ceil(leaves - now()))
-			local status = if castAt > 0 then "Casting off!" elseif leaves > 0 then `Sets sail in {left}s` else "Step aboard to set sail"
+			local need = math.max(0, cap - count)
 			if b.sign then
-				b.sign.count.Text = `{count} / {cap} aboard`
-				b.sign.time.Text = status
-				for i, d in b.sign.dots do
+				local sign = b.sign
+				if castAt > 0 then
+					sign.count.Text = `Party of {cap}`
+					sign.time.Text = "Casting off!"
+				elseif leader == 0 then
+					sign.count.Text = "Free boat"
+					sign.time.Text = "Step aboard to start a party"
+				elseif cap == 0 then
+					sign.count.Text = `{leaderName}'s boat`
+					sign.time.Text = "Choosing the party size..."
+				else
+					sign.count.Text = `Party of {cap}  ·  {count}/{cap} aboard`
+					sign.time.Text = if leaves > 0 then `Sets sail in {left}s` elseif need == 1 then "Room for 1 more!" else `Room for {need} more!`
+				end
+				-- one lamp per seat in the party; lit when taken
+				local seats = if cap > 0 then cap else Config.Lobby.PartySize
+				for i, d in sign.dots do
+					d.Visible = i <= seats
+					d.Position = UDim2.fromScale(0.5 + (i - (seats + 1) / 2) * 0.1, 0.75)
 					d.BackgroundColor3 = if i <= count then Color3.fromRGB(255, 196, 90) else Color3.fromRGB(60, 56, 50)
 				end
 			end
 			if mine == m.Name then
 				shown = true
-				ui.aboardTitle.Text = `BOAT {m:GetAttribute("Number") or ""}  ·  {count}/{cap} aboard`
-				ui.aboardInfo.Text = if castAt > 0 then "Casting off!" elseif leaves > 0 then `Setting sail in {left}s - more can hop on` else "Waiting for the crew..."
+				local isLeader = leader == player.UserId
+				local number = m:GetAttribute("Number") or ""
+				if cap == 0 then
+					ui.aboardTitle.Text = `BOAT {number}`
+					ui.aboardInfo.Text = if isLeader then "Choose how many sailors" else `{leaderName} is choosing the party size`
+				else
+					ui.aboardTitle.Text = `BOAT {number}  ·  {count}/{cap} aboard`
+					ui.aboardInfo.Text = if castAt > 0
+						then "Casting off!"
+						elseif leaves > 0 then `Setting sail in {left}s`
+						elseif need == 1 then "Waiting for 1 more sailor..."
+						else `Waiting for {need} more sailors...`
+				end
 				ui.leave.Visible = castAt == 0
+				-- the leader can change the size until the boat leaves
+				ui.change.Visible = isLeader and castAt == 0 and cap > 0
+				ui.leave.Position = if ui.change.Visible then UDim2.new(0.5, -92, 0, 86) else UDim2.new(0.5, 0, 0, 86)
+				if isLeader and castAt == 0 and (cap == 0 or pickerOpen) then
+					picking = true
+					ui.pickerInfo.Text = if cap == 0 then "How many sailors on this boat?" else `Change the party size ({count} aboard now)`
+					for n, btn in ui.sizes do
+						local ok = n >= count
+						btn.Active = ok
+						btn.AutoButtonColor = false
+						local lbl = btn:FindFirstChild("Label")
+						if lbl and lbl:IsA("TextLabel") then
+							lbl.TextTransparency = if ok then 0 else 0.6
+						end
+					end
+				end
 			end
 			-- a boat starting to cast off
 			if castAt > 0 and b.castAt == 0 then
@@ -599,13 +693,30 @@ function LobbyController.Start()
 				b.castAt = 0
 			end
 		end
-		ui.aboard.Visible = shown
+		ui.aboard.Visible = shown and not picking
+		ui.picker.Visible = picking
+		if not picking then
+			pickerOpen = false
+		end
 		ui.hint.Visible = not shown
 	end
 
 	table.insert(connections, ui.leave.Activated:Connect(function()
 		Remotes.event("LeaveBoat"):FireServer()
 	end))
+	table.insert(connections, ui.change.Activated:Connect(function()
+		pickerOpen = true
+		refresh()
+	end))
+	for n, btn in ui.sizes do
+		table.insert(connections, btn.Activated:Connect(function()
+			if not btn.Active then
+				return
+			end
+			pickerOpen = false
+			Remotes.event("ChooseParty"):FireServer(n)
+		end))
+	end
 
 	local lastRefresh = 0
 	local start = os.clock()

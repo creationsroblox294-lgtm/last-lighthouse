@@ -1,16 +1,22 @@
 --!strict
 -- LobbyService: the harbor. Each boat in Workspace.Lobby.Boats takes a party of up to 4.
 --
---   * Walk onto a boat to board. The first person aboard starts a countdown
---     (Config.Lobby.Countdown); anyone can still hop on or off until it ends.
---   * When it ends the boat casts off: the party is seated and the boat rows out
+--   * The first person to step onto an empty boat is its leader and creates the party:
+--     they choose its size (1-4) with the ChooseParty remote. Until they do, the boat is
+--     reserved (anyone else is put back on the dock).
+--   * Then up to that many can board. When the party is full a short countdown starts
+--     (Config.Lobby.FullCountdown); if someone steps off it stops. The leader can change the
+--     size (not below how many are aboard). If the leader leaves, the next aboard leads;
+--     an empty boat resets.
+--   * When the countdown ends the boat casts off: the party is seated and the boat rows out
 --     (every client animates it from the CastOffAt attribute). After CastOffSeconds the
 --     server reserves a private server and teleports the party there together.
 --   * In Studio there is no teleport: casting off calls onStudioLaunch instead, which
 --     switches this server into the game.
 --
 -- Boat attributes (read by Client/LobbyController):
---   Count, Capacity, LeavesAt (server time or 0), CastOffAt (server time or 0), Passengers ("id,id")
+--   Count, Capacity (chosen party size, 0 while the leader is choosing), Leader (user id or 0),
+--   LeaderName, LeavesAt (server time or 0), CastOffAt (server time or 0), Passengers ("id,id")
 -- Player attribute: Boat (boat name, or nil)
 
 local Players = game:GetService("Players")
@@ -31,6 +37,8 @@ type Boat = {
 	exit: BasePart,
 	seats: { Attachment },
 	passengers: { Player },
+	leader: Player?,
+	size: number?, -- chosen party size (nil: the leader hasn't chosen yet)
 	leavesAt: number?,
 	castingOff: boolean,
 }
@@ -65,7 +73,9 @@ local function publish(boat: Boat)
 		table.insert(ids, tostring(p.UserId))
 	end
 	boat.model:SetAttribute("Count", #boat.passengers)
-	boat.model:SetAttribute("Capacity", Config.Lobby.PartySize)
+	boat.model:SetAttribute("Capacity", boat.size or 0)
+	boat.model:SetAttribute("Leader", if boat.leader then boat.leader.UserId else 0)
+	boat.model:SetAttribute("LeaderName", if boat.leader then boat.leader.DisplayName else "")
 	boat.model:SetAttribute("LeavesAt", boat.leavesAt or 0)
 	boat.model:SetAttribute("Passengers", table.concat(ids, ","))
 end
@@ -86,6 +96,8 @@ end
 local function resetBoat(boat: Boat)
 	boat.castingOff = false
 	boat.leavesAt = nil
+	boat.leader = nil
+	boat.size = nil
 	table.clear(boat.passengers)
 	boat.model:SetAttribute("CastOffAt", 0)
 	publish(boat)
@@ -194,20 +206,41 @@ local function step()
 				p:SetAttribute("Boat", nil)
 			end
 		end
-		-- newcomers, until the boat is full
+		-- the leader left: the next one aboard takes over; nobody left: the boat is free again
+		if boat.leader and not table.find(kept, boat.leader) then
+			boat.leader = kept[1]
+			if boat.leader then
+				Remotes.notify(boat.leader, "You lead this boat now.", nil)
+			end
+		end
+		if #kept == 0 then
+			boat.leader = nil
+			boat.size = nil
+		end
+		-- newcomers: the first onto an empty boat creates the party; then up to its size
 		for p in present do
-			if #kept < Config.Lobby.PartySize then
+			if not boat.leader then
+				boat.leader = p
+				boat.size = nil
+				table.insert(kept, p)
+				p:SetAttribute("Boat", boat.model.Name)
+			elseif not boat.size then
+				putOnDock(boat, p)
+				Remotes.notify(p, `{boat.leader.DisplayName} is setting up this boat. Try another one, or wait a moment!`, nil)
+			elseif #kept < boat.size then
 				table.insert(kept, p)
 				p:SetAttribute("Boat", boat.model.Name)
 			else
 				putOnDock(boat, p)
-				Remotes.notify(p, `This boat is full ({Config.Lobby.PartySize}). Try another one!`, nil)
+				Remotes.notify(p, `This party is full ({boat.size}). Try another boat!`, nil)
 			end
 		end
 		boat.passengers = kept
-		if #kept > 0 and not boat.leavesAt then
-			boat.leavesAt = t + Config.Lobby.Countdown
-		elseif #kept == 0 then
+		-- full: count down; not full (someone stepped off, or the size went up): wait
+		local full = boat.size ~= nil and #kept >= boat.size
+		if full and not boat.leavesAt then
+			boat.leavesAt = t + Config.Lobby.FullCountdown
+		elseif not full then
 			boat.leavesAt = nil
 		end
 		publish(boat)
@@ -253,6 +286,8 @@ function LobbyService.Start()
 			exit = exit,
 			seats = seats,
 			passengers = {},
+			leader = nil,
+			size = nil,
 			leavesAt = nil,
 			castingOff = false,
 		}
@@ -261,6 +296,29 @@ function LobbyService.Start()
 	end
 	table.sort(boats, function(a, b)
 		return (a.model:GetAttribute("Number") or 0) < (b.model:GetAttribute("Number") or 0)
+	end)
+
+	-- the leader picks (or changes) the party size
+	Remotes.event("ChooseParty").OnServerEvent:Connect(function(player: Player, size: any)
+		if typeof(size) ~= "number" or size ~= size then
+			return
+		end
+		size = math.floor(size)
+		if size < 1 or size > Config.Lobby.PartySize then
+			return
+		end
+		for _, boat in boats do
+			if boat.leader == player and not boat.castingOff then
+				if size < #boat.passengers then
+					Remotes.notify(player, `There are already {#boat.passengers} aboard.`, nil)
+					return
+				end
+				boat.size = size
+				boat.leavesAt = nil -- step() restarts the countdown if it's full
+				publish(boat)
+				return
+			end
+		end
 	end)
 
 	Remotes.event("LeaveBoat").OnServerEvent:Connect(function(player: Player)

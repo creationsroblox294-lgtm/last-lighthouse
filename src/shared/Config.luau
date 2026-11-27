@@ -454,8 +454,8 @@ Config.UI = {
 ---------------------------------------------------------------------------
 Config.Lobby = {
 	Center = Vector3.new(3200, 0, 0), -- Workspace.Lobby is built here (tools/BuildLobby.luau)
-	PartySize = 4, -- seats per boat
-	Countdown = 15, -- seconds from the first person boarding until the boat casts off
+	PartySize = 4, -- most sailors a party (boat) can have; the leader picks 1-4
+	FullCountdown = 5, -- seconds from the party filling up until the boat casts off
 	CastOffSeconds = 4, -- the boat rows out this long before the teleport
 	ReturnDelay = 6, -- game servers: seconds after the end screen before everyone goes home
 }

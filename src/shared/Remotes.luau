@@ -16,6 +16,7 @@ local EVENT_NAMES = {
 	"Struggle", -- client -> server: () while held by the Hollow
 	"FlareFired", -- server -> client: (position: Vector3, shooter: Player) the flare shot
 	"LeaveBoat", -- client -> server: () step off the lobby boat you're in
+	"ChooseParty", -- client -> server: (size: number) the boat's leader picks the party size (1-4)
 	"AnimalWarn", -- server -> client: (kind: string, tree: Model, landAt: Vector3, seconds: number)
 	"Punch", -- client -> server: () throw a punch
 	"PunchHit", -- server -> client: (position: Vector3, kind: string, target: Instance?)
