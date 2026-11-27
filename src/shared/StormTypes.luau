@@ -535,7 +535,35 @@ add({
 		Smoke = "rbxassetid://79085558579719",
 	},
 })
-planned("SandstormSurge", "Sandstorm Surge", "Moderate", "Sand is lifting off the beaches.", "Sandstorm Surge! Stay off the shore.")
+add({
+	Id = "SandstormSurge",
+	Name = "Sandstorm Surge",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "Sand is lifting off the beaches.",
+	Blurb = "Sandstorm Surge! Stay off the beaches, and when a surge comes, get under a roof. It strips the sand bare as it passes...",
+	Color = Color3.fromRGB(225, 175, 110),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 0.8,
+	-- a hot ochre gale (Storms/SandstormSurge sends the surges; StormFX/SandstormSurge draws them and the blowing sand)
+	Look = {
+		ClockTime = 16.2,
+		Brightness = 2.2,
+		Exposure = 0,
+		Ambient = Color3.fromRGB(170, 130, 90),
+		FogDensity = 0.3,
+		FogHaze = 2.4,
+		FogColor = Color3.fromRGB(205, 160, 105),
+	},
+	Textures = {
+		SandWall = "rbxassetid://136857020465225",
+		Grit = "rbxassetid://138692417222593",
+		Streak = "rbxassetid://134764319364715",
+		Haze = "rbxassetid://97891709522639",
+		Glint = "rbxassetid://117341182317330",
+		Smoke = "rbxassetid://79085558579719",
+	},
+})
 planned("GhostShip", "Ghost Ship", "Moderate", "A bell is ringing out at sea...", "A Ghost Ship drifts offshore.")
 planned("WildSwarm", "Wild Swarm", "Moderate", "The trees are rustling. Something is restless.", "Wild Swarm! The tree animals are frenzied.")
 
