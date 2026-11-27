@@ -704,7 +704,34 @@ add({
 		Glow = "rbxassetid://133210713162638",
 	},
 })
-planned("EmberStorm", "Ember Storm", "Severe", "Dry lightning and hot wind.", "Ember Storm! Fires are spreading.")
+add({
+	Id = "EmberStorm",
+	Name = "Ember Storm",
+	Tier = "Severe",
+	Built = true,
+	Forecast = "Dry lightning and hot wind.",
+	Blurb = "Ember Storm! Fires are spreading through the pines. Beat them out before they spread, and keep out of the heat.",
+	Color = Color3.fromRGB(255, 130, 50),
+	DrainMultiplier = 3.3,
+	EnemyMultiplier = 0.8,
+	-- a smoky orange sky and a hot wind (Storms/EmberStorm lights and spreads the fires; StormFX/EmberStorm draws them)
+	Look = {
+		ClockTime = 18.2,
+		Brightness = 2.4,
+		Exposure = 0.25,
+		Ambient = Color3.fromRGB(160, 105, 85),
+		FogDensity = 0.35,
+		FogHaze = 2,
+		FogColor = Color3.fromRGB(150, 85, 55),
+	},
+	Textures = {
+		Ember = "rbxassetid://110074077788286",
+		Flame = "rbxassetid://70612468476990",
+		Smoke = "rbxassetid://79085558579719",
+		Haze = "rbxassetid://97891709522639",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 planned("Whiteout", "Whiteout", "Severe", "Snow clouds, out of season.", "Whiteout! Get inside.")
 
 ----------------------------------------------------------------- Catastrophic
