@@ -649,7 +649,35 @@ add({
 		Vignette = "rbxassetid://134594259515631",
 	},
 })
-planned("Hurricane", "Hurricane", "Severe", "The barometer has never been this low.", "HURRICANE!")
+add({
+	Id = "Hurricane",
+	Name = "Hurricane",
+	Tier = "Severe",
+	Built = true,
+	Forecast = "The barometer has never been this low.",
+	Blurb = "HURRICANE! Stay under a roof. If it all goes quiet, you're in the eye, and the other side is coming.",
+	Color = Color3.fromRGB(170, 190, 210),
+	DrainMultiplier = 3.6,
+	EnemyMultiplier = 0.6,
+	-- a howling grey-green darkness (Storms/Hurricane turns the wind and brings the eye; StormFX/Hurricane draws it)
+	Look = {
+		ClockTime = 15.5,
+		Brightness = 1.9,
+		Exposure = 0.1,
+		Ambient = Color3.fromRGB(125, 135, 140),
+		FogDensity = 0.3,
+		FogHaze = 2.2,
+		FogColor = Color3.fromRGB(125, 135, 140),
+	},
+	Textures = {
+		Spiral = "rbxassetid://104829425726227",
+		Drop = "rbxassetid://109078171013574",
+		Streak = "rbxassetid://134764319364715",
+		Leaf = "rbxassetid://105999470506423",
+		Haze = "rbxassetid://97891709522639",
+		Sheet = "rbxassetid://94100520771589",
+	},
+})
 planned("BlackoutStorm", "Blackout Storm", "Severe", "Static is crackling in the air.", "Blackout! Lightning hit the lamp!")
 planned("EmberStorm", "Ember Storm", "Severe", "Dry lightning and hot wind.", "Ember Storm! Fires are spreading.")
 planned("Whiteout", "Whiteout", "Severe", "Snow clouds, out of season.", "Whiteout! Get inside.")
