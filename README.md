@@ -368,10 +368,9 @@ Testing teleports needs the published game (2+ accounts, or one account to try a
 - **In the boat:** all 2–4 party members sit on their own bench, rowing slightly out of step, then bracing. All of them go over the side when the wave flips the boat.
 - **On the beach:** they wash up side by side, 4.2 studs apart across the beach, and stir one after another. Each client's camera follows its own player. After the film, `IntroService` puts each real character exactly where their actor lay.
 - Characters are streamed to every client (`ModelStreamingMode.Persistent`) so the film can clone them.
-- **The wave** (`Client/IntroWave`) is 8 overlapping segments of strips reshaped every frame into a breaking-wave cross-section.
-  - It has a long back slope, a steep concave front face, and a lip that throws forward as it curls.
-  - Each segment's height, lean and lip wander with noise, and ripples run over the surface.
-  - Colour goes from deep teal at the foot to pale green and foam at the lip.
-  - A flowing streak texture (`assets/fx/WaveStreaks.png`, image 70735693296785) scrolls up the face, continuous across strips.
-  - Spray and mist blow off the crest.
-  - It uses plain parts on purpose: `EditableMesh` needs the "Mesh / Image APIs" security setting.
+- **The wave** is a skinned mesh animated in Blender (`assets/wave/LastLighthouse_Wave.blend`).
+  - Rig: 4 bone chains across a 400-stud sheet, 11 bones each from the back foot over the crest and lip to the front foot. The "Break" action (4 s) goes swell → steep face → pitching lip → barrel → collapse, each chain slightly out of phase so the break peels along the wave.
+  - Model asset 94908490924561 → `ReplicatedStorage.IntroAssets.Wave` (MeshPart `Body`, DoubleSided, SurfaceAppearance colour 91213604711302 / normal 94514185979467 / roughness 117317891259615; UVs tile 4× across).
+  - Bone paths: `Shared/WaveAnimData` (sampled at 10 fps from Blender, Catmull-Rom in between). `Client/IntroWaveMesh` moves each bone along its path and turns it with the surface slope every frame. The wave rolls toward the boat at 24 studs/s, so the lip lands on it at the flip.
+  - Spray tears off the lip bones as it pitches, and whitewater blows out of the foot as it collapses.
+  - The old strip-built wave (`Client/IntroWave`) is the fallback if the asset is missing.

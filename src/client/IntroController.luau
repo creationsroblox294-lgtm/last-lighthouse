@@ -1,7 +1,7 @@
 --!strict
 -- IntroController: the intro cutscene, played live in the engine so it stars the players'
 -- own Roblox avatars. The whole party (up to 4) rows out together at a bright sunset, the
--- storm rolls in, lightning, a giant wave (IntroWave, a live mesh) flips the boat, and
+-- storm rolls in, lightning, a giant wave (IntroWaveMesh, animated in Blender) flips the boat, and
 -- everyone wakes face down side by side on the island's south beach and gets up to see the
 -- lighthouse. The server picks one start time for the party (IntroService: IntroCast /
 -- IntroStartAt), so every client plays the same film in sync. Skippable. When it ends the
@@ -22,6 +22,7 @@ local UISkin = require(script.Parent:WaitForChild("UISkin"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local FogController = require(script.Parent:WaitForChild("FogController"))
 local IntroWave = require(script.Parent:WaitForChild("IntroWave"))
+local IntroWaveMesh = require(script.Parent:WaitForChild("IntroWaveMesh"))
 
 local IntroController = {}
 local player = Players.LocalPlayer
@@ -714,7 +715,9 @@ function IntroController.Start()
 	spray.Rate = 0
 	spray.Parent = wave
 	scene.Parent = Workspace
-	local liveWave = IntroWave.new(scene, BOAT_START.X, SEA_Y)
+	-- the Blender-animated breaking wave; the strip-built wave is the fallback
+	local meshWave = IntroWaveMesh.new(scene, BOAT_START.X, SEA_Y, BOAT_START.Z - BOAT_SPEED * FLIP)
+	local liveWave = if meshWave then nil else IntroWave.new(scene, BOAT_START.X, SEA_Y)
 
 	-- take over the look; FogController hands it back when we are done
 	FogController.Hold(true)
@@ -937,7 +940,9 @@ function IntroController.Start()
 				local w = t - WAVE
 				local d = math.min(22 + 26 * w, 70)
 				local front = z + 58 - 38 * w
-				if liveWave then
+				if meshWave then
+					meshWave:update(w)
+				elseif liveWave then
 					local height = math.min(14 + 20 * w, 46)
 					local curl = math.clamp((w - 0.5) / 1.4, 0, 1)
 					liveWave:update(height, front, curl, t)
@@ -994,6 +999,10 @@ function IntroController.Start()
 				if liveWave then
 					liveWave:destroy()
 					liveWave = nil
+				end
+				if meshWave then
+					meshWave:destroy()
+					meshWave = nil
 				end
 				rain.Rate = 0
 				for _, sl in sailors do
