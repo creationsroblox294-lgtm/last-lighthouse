@@ -622,7 +622,33 @@ add({
 })
 
 ----------------------------------------------------------------- Severe
-planned("RedTide", "Red Tide", "Severe", "The sea has turned a strange colour.", "Red Tide! Stay out of the water.")
+add({
+	Id = "RedTide",
+	Name = "Red Tide",
+	Tier = "Severe",
+	Built = true,
+	Forecast = "The sea has turned a strange colour.",
+	Blurb = "Red Tide! The water burns. Stay out of the sea, keep back from the shore when it swells, and watch for the Drowned.",
+	Color = Color3.fromRGB(230, 50, 50),
+	DrainMultiplier = 3.3,
+	EnemyMultiplier = 1,
+	-- a sea of blood under a crimson sky (Storms/RedTide burns the water and sends the surges; StormFX/RedTide draws it)
+	Look = {
+		ClockTime = 17.3,
+		Brightness = 1.9,
+		Exposure = 0,
+		Ambient = Color3.fromRGB(135, 85, 85),
+		FogDensity = 0.32,
+		FogHaze = 1.8,
+		FogColor = Color3.fromRGB(150, 70, 70),
+	},
+	Textures = {
+		Algae = "rbxassetid://99201196317407",
+		Haze = "rbxassetid://97891709522639",
+		Foam = "rbxassetid://119411769037011",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 planned("Hurricane", "Hurricane", "Severe", "The barometer has never been this low.", "HURRICANE!")
 planned("BlackoutStorm", "Blackout Storm", "Severe", "Static is crackling in the air.", "Blackout! Lightning hit the lamp!")
 planned("EmberStorm", "Ember Storm", "Severe", "Dry lightning and hot wind.", "Ember Storm! Fires are spreading.")
