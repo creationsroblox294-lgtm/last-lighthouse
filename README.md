@@ -356,3 +356,19 @@ Testing teleports needs the published game (2+ accounts, or one account to try a
   2. A red round climbs steeply, trailing smoke.
   3. It pops, a parachute opens, and the flare burns red for 12s, swinging and drifting down while lighting the ground (with shadows).
 - **Hammer:** now held upright, head on top with the striking face forward (`CombatService` `HOLD.Hammer.pitch = 90`).
+
+## Party intro cutscene and the wave
+- **Everyone's in it, in sync.**
+  - `IntroService` waits for the whole party to arrive (the harbor's `TeleportData.party` says how many, 20s at most), waits for avatars to load, then publishes `ReplicatedStorage.IntroCast` (user ids, sorted) and `IntroStartAt` (server time, +2.5s).
+  - Every client plays the same film from that moment, with the same seed: same boat rocking, same lightning, same fling directions.
+  - Until then the screen says "Waiting for your crew...". Someone who isn't in the cast (a late joiner) gets a solo film.
+- **In the boat:** all 2–4 party members sit on their own bench, rowing slightly out of step, then bracing. All of them go over the side when the wave flips the boat.
+- **On the beach:** they wash up side by side, 4.2 studs apart across the beach, and stir one after another. Each client's camera follows its own player. After the film, `IntroService` puts each real character exactly where their actor lay.
+- Characters are streamed to every client (`ModelStreamingMode.Persistent`) so the film can clone them.
+- **The wave** (`Client/IntroWave`) is 8 overlapping segments of strips reshaped every frame into a breaking-wave cross-section.
+  - It has a long back slope, a steep concave front face, and a lip that throws forward as it curls.
+  - Each segment's height, lean and lip wander with noise, and ripples run over the surface.
+  - Colour goes from deep teal at the foot to pale green and foam at the lip.
+  - A flowing streak texture (`assets/fx/WaveStreaks.png`, image 70735693296785) scrolls up the face, continuous across strips.
+  - Spray and mist blow off the crest.
+  - It uses plain parts on purpose: `EditableMesh` needs the "Mesh / Image APIs" security setting.

@@ -1,9 +1,11 @@
 --!strict
--- IntroController: the intro cutscene, played live in the engine so it stars the player's
--- own Roblox avatar. A clone of your character stands in the rowboat at a bright sunset,
--- the storm rolls in, lightning, a giant wave flips the boat, and you wake face down on the
--- island's south beach and get up to see the lighthouse. Skippable. When it ends the server
--- puts the real character on that beach (IntroService).
+-- IntroController: the intro cutscene, played live in the engine so it stars the players'
+-- own Roblox avatars. The whole party (up to 4) rows out together at a bright sunset, the
+-- storm rolls in, lightning, a giant wave (IntroWave, a live mesh) flips the boat, and
+-- everyone wakes face down side by side on the island's south beach and gets up to see the
+-- lighthouse. The server picks one start time for the party (IntroService: IntroCast /
+-- IntroStartAt), so every client plays the same film in sync. Skippable. When it ends the
+-- server puts each real character where their actor lay on the beach.
 
 local ContentProvider = game:GetService("ContentProvider")
 local Lighting = game:GetService("Lighting")
@@ -19,6 +21,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local UISkin = require(script.Parent:WaitForChild("UISkin"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local FogController = require(script.Parent:WaitForChild("FogController"))
+local IntroWave = require(script.Parent:WaitForChild("IntroWave"))
 
 local IntroController = {}
 local player = Players.LocalPlayer
@@ -282,11 +285,18 @@ local function noCollide(model: Instance)
 	end
 end
 
--- a copy of the player's own avatar to act out the scene (kept unparented; cloned per scene)
-local function makeTemplate(): (Model?, number)
-	local character = player.Character or player.CharacterAdded:Wait()
+-- a copy of a party member's avatar to act out the scene (kept unparented; cloned per scene)
+local function makeTemplate(who: Player): (Model?, number)
 	local t0 = os.clock()
-	while not player:HasAppearanceLoaded() and os.clock() - t0 < 6 do
+	local character = who.Character
+	while (not character or not character:FindFirstChild("HumanoidRootPart")) and os.clock() - t0 < 8 do
+		task.wait(0.1)
+		character = who.Character
+	end
+	if not character then
+		return nil, 3
+	end
+	while not who:HasAppearanceLoaded() and os.clock() - t0 < 8 do
 		task.wait(0.1)
 	end
 	character:WaitForChild("HumanoidRootPart", 5)
@@ -529,8 +539,48 @@ function IntroController.Start()
 		end
 	end
 
-	local template, standHeight = makeTemplate()
 	controls(false)
+	-- who is in the film, and when it starts: the server picks one start time for the party
+	-- so everyone sees the same thing at the same moment
+	local cast: { Player } = { player }
+	local startAt: number? = nil
+	do
+		ui.caption.Text = "Waiting for your crew..."
+		ui.caption.TextTransparency = 0
+		ui.scroll.ImageTransparency = 0
+		local w = os.clock()
+		while not ReplicatedStorage:GetAttribute("IntroStartAt") and os.clock() - w < 30 do
+			task.wait(0.1)
+		end
+		local at = ReplicatedStorage:GetAttribute("IntroStartAt")
+		local ids = string.split(tostring(ReplicatedStorage:GetAttribute("IntroCast") or ""), ",")
+		if typeof(at) == "number" and table.find(ids, tostring(player.UserId)) then
+			cast = {}
+			for _, id in ids do
+				local p = Players:GetPlayerByUserId(tonumber(id) or 0)
+				if p then
+					table.insert(cast, p)
+				end
+			end
+			if not table.find(cast, player) then
+				table.insert(cast, player)
+			end
+			startAt = at
+		end
+	end
+	type Cast = { who: Player, model: Model?, height: number }
+	local actors: { Cast } = {}
+	for _, p in cast do
+		local m, h = makeTemplate(p)
+		table.insert(actors, { who = p, model = m, height = h })
+	end
+	local myIndex = 1
+	for i, c in actors do
+		if c.who == player then
+			myIndex = i
+		end
+	end
+	local template, standHeight = actors[myIndex].model, actors[myIndex].height
 	-- wait (a little) for the sea out by the boat to stream in
 	do
 		local params = RaycastParams.new()
@@ -553,20 +603,29 @@ function IntroController.Start()
 		isR15 = h ~= nil and h.RigType == Enum.HumanoidRigType.R15
 	end
 	local anims = intro.Animations or {}
-	local ids = {
-		row = if isR15 then anims.Row or "" else anims.IdleR6 or "",
-		brace = if isR15 then anims.Brace or "" else anims.IdleR6 or "",
-		getUp = if isR15 then anims.GetUp or "" else "",
-		idle = if isR15 then anims.IdleR15 or "" else anims.IdleR6 or "",
-	}
+	local function idsFor(r15: boolean)
+		return {
+			row = if r15 then anims.Row or "" else anims.IdleR6 or "",
+			brace = if r15 then anims.Brace or "" else anims.IdleR6 or "",
+			getUp = if r15 then anims.GetUp or "" else "",
+			idle = if r15 then anims.IdleR15 or "" else anims.IdleR6 or "",
+		}
+	end
+	local function rigIsR15(m: Model?): boolean
+		local h = m and m:FindFirstChildOfClass("Humanoid")
+		return h ~= nil and h.RigType == Enum.HumanoidRigType.R15
+	end
+	local ids = idsFor(isR15)
 	-- fetch the animations before the film starts so nobody T-poses on frame one
 	do
 		local list: { Instance } = { ui.scroll, ui.title } -- and the scroll / name plate art
-		for _, id in ids do
-			if id ~= "" then
-				local a = Instance.new("Animation")
-				a.AnimationId = id
-				table.insert(list, a)
+		for _, set in { idsFor(true), idsFor(false) } do
+			for _, id in set do
+				if id ~= "" then
+					local a = Instance.new("Animation")
+					a.AnimationId = id
+					table.insert(list, a)
+				end
 			end
 		end
 		local done = false
@@ -585,15 +644,30 @@ function IntroController.Start()
 	local scene = Instance.new("Folder")
 	scene.Name = "IntroScene"
 	boat.Parent = scene
-	local seaActor = if template then template:Clone() else nil
-	if seaActor then
-		seaActor.Parent = scene
+	-- the party in the boat: one bench each, all facing the stern as rowers do
+	local SEATS = { 1.5, -2.7, 5.4, -6.4 }
+	type Sailor = { model: Model, root: BasePart, row: AnimationTrack?, brace: AnimationTrack?, lift: number, seat: number, thrown: boolean, mine: boolean }
+	local sailors: { Sailor } = {}
+	for i, c in actors do
+		local m = if c.model then c.model:Clone() else nil
+		local root = m and m.PrimaryPart
+		if m and root then
+			m.Parent = scene
+			local set = idsFor(rigIsR15(m))
+			local row = loadTrack(m, set.row, true)
+			local brace = loadTrack(m, set.brace, true)
+			if row then
+				row:Play(0)
+				row.TimePosition = (i - 1) * 0.37 -- not perfectly in step, like real rowers
+			end
+			table.insert(sailors, { model = m, root = root, row = row, brace = brace, lift = c.height, seat = SEATS[i] or 0, thrown = false, mine = c.who == player })
+		end
 	end
-	local seaRoot = seaActor and seaActor.PrimaryPart
-	local rowTrack = seaActor and loadTrack(seaActor, ids.row, true)
-	local braceTrack = seaActor and loadTrack(seaActor, ids.brace, true)
-	if rowTrack then
-		rowTrack:Play(0)
+	local mySailor: Sailor? = nil
+	for _, sl in sailors do
+		if sl.mine then
+			mySailor = sl
+		end
 	end
 
 	local rainCloud = part({ Size = Vector3.new(140, 1, 140), Transparency = 1, Parent = scene })
@@ -640,6 +714,7 @@ function IntroController.Start()
 	spray.Rate = 0
 	spray.Parent = wave
 	scene.Parent = Workspace
+	local liveWave = IntroWave.new(scene, BOAT_START.X, SEA_Y)
 
 	-- take over the look; FogController hands it back when we are done
 	FogController.Hold(true)
@@ -683,10 +758,17 @@ function IntroController.Start()
 	end
 
 	local camera = Workspace.CurrentCamera
-	local beachGround = groundAt(Config.World.IntroBeach)
+	local beachCenter = groundAt(Config.World.IntroBeach)
 	local tower = Config.World.TowerCenter
 	local lamp = Config.World.LampPosition
-	local towardTower = (Vector3.new(tower.X, 0, tower.Z) - Vector3.new(beachGround.X, 0, beachGround.Z)).Unit
+	local towardTower = (Vector3.new(tower.X, 0, tower.Z) - Vector3.new(beachCenter.X, 0, beachCenter.Z)).Unit
+	-- the party washes up side by side across the beach (IntroService.BeachSlot matches this)
+	local beachRight = CFrame.lookAt(beachCenter, beachCenter + towardTower).RightVector
+	local function slotGround(i: number): Vector3
+		local offset = (i - (#actors + 1) / 2) * 4.2
+		return groundAt(beachCenter + beachRight * offset)
+	end
+	local beachGround = slotGround(myIndex)
 	local standPos = beachGround + Vector3.new(0, standHeight, 0)
 	local standCF = CFrame.lookAt(standPos, standPos + towardTower)
 	-- face down along the slope of the sand: head toward the tower, back to the sky
@@ -698,6 +780,33 @@ function IntroController.Start()
 	local proneCF = CFrame.fromMatrix((headGround + feetGround) / 2 + back * 0.6, right, along, back)
 
 	local beachUp = Vector3.yAxis
+	type Waker = { model: Model?, root: BasePart?, ground: Vector3, standCF: CFrame, proneCF: CFrame, height: number, getUp: AnimationTrack?, idle: AnimationTrack?, started: boolean, idling: boolean, lift: number, delay: number }
+	local wakers: { Waker } = {}
+	for i, c in actors do
+		local g = slotGround(i)
+		local sp = g + Vector3.new(0, c.height, 0)
+		local scf = CFrame.lookAt(sp, sp + towardTower)
+		local hg = groundAt(g + towardTower * 2.2)
+		local fg = groundAt(g - towardTower * 2.2)
+		local al = (hg - fg).Unit
+		local rt = scf.RightVector
+		local bk = rt:Cross(al).Unit
+		table.insert(wakers, {
+			model = nil,
+			root = nil,
+			ground = g,
+			standCF = scf,
+			proneCF = CFrame.fromMatrix((hg + fg) / 2 + bk * 0.6, rt, al, bk),
+			height = c.height,
+			getUp = nil,
+			idle = nil,
+			started = false,
+			idling = false,
+			lift = 1,
+			-- the others stir a moment after you, one by one
+			delay = if c.who == player then 0 else 0.5 + ((i * 37) % 7) * 0.18,
+		})
+	end
 
 	local finished = false
 	local skipped = false
@@ -705,23 +814,25 @@ function IntroController.Start()
 		skipped = true
 	end)
 
-	local seed = math.random() * 100
+	-- same seed for the whole party, so the boat rocks and the lightning falls alike for all
+	local seed = if startAt then (startAt % 997) / 9.97 else math.random() * 100
+	local rng = Random.new(math.floor(seed * 1000))
 	local nextBolt = 1
 	local lastFlash = -10
-	local thrown = false
 	local onBeach = false
-	local beachActor: Model? = nil
-	local beachRoot: BasePart? = nil
-	local getUpTrack: AnimationTrack? = nil
-	local idleTrack: AnimationTrack? = nil
-	local getUpStarted = false
-	local idleStarted = false
-	local lift = standHeight -- root height above the floor, eased toward what the pose needs
 	local camCF: CFrame? = nil
 	local fov = 70
 	-- Studio testing: set workspace attribute IntroSkipTo (seconds) to start part-way in
 	local skipTo = Workspace:GetAttribute("IntroSkipTo")
-	local t0 = os.clock() - (if typeof(skipTo) == "number" and RunService:IsStudio() then skipTo else 0)
+	if startAt then
+		while Workspace:GetServerTimeNow() < startAt do
+			task.wait()
+		end
+	end
+	ui.caption.TextTransparency = 1
+	ui.scroll.ImageTransparency = 1
+	local late = if startAt then math.max(0, Workspace:GetServerTimeNow() - startAt) else 0
+	local t0 = os.clock() - late - (if typeof(skipTo) == "number" and RunService:IsStudio() then skipTo else 0)
 	while nextBolt <= #LIGHTNING and LIGHTNING[nextBolt] < os.clock() - t0 do
 		nextBolt += 1
 	end
@@ -782,8 +893,8 @@ function IntroController.Start()
 			nextBolt += 1
 			lastFlash = t
 			local bz = BOAT_START.Z - BOAT_SPEED * t
-			local ang = math.random() * math.pi * 2
-			bolt(scene, Vector3.new(BOAT_START.X + math.cos(ang) * math.random(50, 110), SEA_Y, bz - math.abs(math.sin(ang)) * math.random(40, 110)))
+			local ang = rng:NextNumber() * math.pi * 2
+			bolt(scene, Vector3.new(BOAT_START.X + math.cos(ang) * rng:NextInteger(50, 110), SEA_Y, bz - math.abs(math.sin(ang)) * rng:NextInteger(40, 110)))
 		end
 		local flash = math.max(0, 1 - (t - lastFlash) / 0.3)
 		ui.flash.BackgroundTransparency = 1 - flash * 0.55
@@ -800,38 +911,45 @@ function IntroController.Start()
 			local boatCF = boatAt(t, s)
 			boat:PivotTo(boatCF)
 			local z = boatCF.Z
-			-- the floor between the benches; you sit facing the stern, as rowers do
-			local floorCF = boatCF * CFrame.new(0, boatFloor, 1.5) * CFrame.Angles(0, math.pi, 0)
-
-			if seaActor and seaRoot then
+			for n, sl in sailors do
+				-- the floor between the benches; each sits facing the stern, as rowers do
+				local floorCF = boatCF * CFrame.new(0, boatFloor, sl.seat) * CFrame.Angles(0, math.pi, 0)
 				if t < FLIP then
 					-- swap from rowing to bracing as the storm takes hold
-					if rowTrack and braceTrack and s > 0.35 and rowTrack.IsPlaying then
-						rowTrack:Stop(0.8)
-						braceTrack:Play(0.8)
+					if sl.row and sl.brace and s > 0.35 + n * 0.03 and sl.row.IsPlaying then
+						sl.row:Stop(0.8)
+						sl.brace:Play(0.8)
 					end
-					seaRoot.CFrame = floorCF * CFrame.new(0, lift, 0)
-					local need = -lowestBelowRoot(seaActor, seaRoot, floorCF.UpVector)
-					lift += (need - lift) * (1 - math.exp(-dt * 10))
-				elseif not thrown then
-					thrown = true
-					local fling = boatCF.RightVector * -16 + Vector3.new(0, 26, 0) + boatCF.LookVector * -5
-					ragdoll(seaActor, fling, Vector3.new(math.random(-6, 6), math.random(-3, 3), math.random(4, 9)))
+					sl.root.CFrame = floorCF * CFrame.new(0, sl.lift, 0)
+					local need = -lowestBelowRoot(sl.model, sl.root, floorCF.UpVector)
+					sl.lift += (need - sl.lift) * (1 - math.exp(-dt * 10))
+				elseif not sl.thrown then
+					sl.thrown = true
+					-- everyone goes over the side, each a little differently
+					local side = if n % 2 == 0 then 1 else -1
+					local fling = boatCF.RightVector * (-16 + side * rng:NextNumber(0, 5)) + Vector3.new(0, 22 + rng:NextNumber(0, 8), 0) + boatCF.LookVector * rng:NextNumber(-7, 3)
+					ragdoll(sl.model, fling, Vector3.new(rng:NextInteger(-6, 6), rng:NextInteger(-3, 3), rng:NextInteger(4, 9)))
 				end
 			end
 
-			-- the wave: a wall of water rolling in from behind
+			-- the wave: rises behind the boat, rolls in, curls over and breaks on it
 			if t >= WAVE then
 				local w = t - WAVE
 				local d = math.min(22 + 26 * w, 70)
 				local front = z + 58 - 38 * w
-				wave.Size = Vector3.new(900, d, d)
-				wave.CFrame = CFrame.new(BOAT_START.X, SEA_Y + d * 0.12, front + d / 2)
-				wave.Transparency = 0.05
-				foam.Size = Vector3.new(900, d * 0.3, d * 0.3)
-				foam.CFrame = CFrame.new(BOAT_START.X, SEA_Y + d * 0.55, front + d * 0.42)
-				foam.Transparency = 0.15
-				spray.Rate = 220
+				if liveWave then
+					local height = math.min(14 + 20 * w, 46)
+					local curl = math.clamp((w - 0.5) / 1.4, 0, 1)
+					liveWave:update(height, front, curl, t)
+				else
+					wave.Size = Vector3.new(900, d, d)
+					wave.CFrame = CFrame.new(BOAT_START.X, SEA_Y + d * 0.12, front + d / 2)
+					wave.Transparency = 0.05
+					foam.Size = Vector3.new(900, d * 0.3, d * 0.3)
+					foam.CFrame = CFrame.new(BOAT_START.X, SEA_Y + d * 0.55, front + d * 0.42)
+					foam.Transparency = 0.15
+					spray.Rate = 220
+				end
 			end
 
 			-- camera: one continuous move, eased so shot changes glide instead of cutting
@@ -855,7 +973,7 @@ function IntroController.Start()
 				-- pull back and up as you are thrown into the water
 				local k = smooth((t - FLIP) / 1.4)
 				local eye = Vector3.new(BOAT_START.X + lerp(7, 14, k), SEA_Y + lerp(3.5, 10, k), z - lerp(16, 26, k))
-				local look = if seaRoot then seaRoot.Position:Lerp(level.Position, 0.5) else level.Position
+				local look = if mySailor then mySailor.root.Position:Lerp(level.Position, 0.5) else level.Position
 				target = CFrame.lookAt(eye, look)
 				targetFov = 82
 			end
@@ -873,51 +991,63 @@ function IntroController.Start()
 				boat:Destroy()
 				wave:Destroy()
 				foam:Destroy()
-				rain.Rate = 0
-				if seaActor then
-					seaActor:Destroy()
-					seaActor = nil
+				if liveWave then
+					liveWave:destroy()
+					liveWave = nil
 				end
-				if template then
-					beachActor = template:Clone()
-					local ba = beachActor :: Model
-					beachRoot = ba.PrimaryPart
-					ba.Parent = scene
-					getUpTrack = loadTrack(ba, ids.getUp, false)
-					idleTrack = loadTrack(ba, ids.idle, true)
-					if getUpTrack then
-						-- frame one of the get-up clip is the unconscious pose: hold it
-						getUpTrack:Play(0)
-						getUpTrack:AdjustSpeed(0)
-						getUpTrack.TimePosition = 0
+				rain.Rate = 0
+				for _, sl in sailors do
+					sl.model:Destroy()
+				end
+				table.clear(sailors)
+				mySailor = nil
+				-- the whole party, face down in a row on the sand
+				for i, wk in wakers do
+					local c = actors[i]
+					if c.model then
+						local m = c.model:Clone()
+						m.Parent = scene
+						wk.model = m
+						wk.root = m.PrimaryPart
+						local set = idsFor(rigIsR15(m))
+						wk.getUp = loadTrack(m, set.getUp, false)
+						wk.idle = loadTrack(m, set.idle, true)
+						if wk.getUp then
+							-- frame one of the get-up clip is the unconscious pose: hold it
+							wk.getUp:Play(0)
+							wk.getUp:AdjustSpeed(0)
+							wk.getUp.TimePosition = 0
+						end
+						wk.lift = 1
 					end
-					lift = 1
 				end
 				camCF = nil -- new scene: no easing from the sea
 			end
 			applyLook(DAWN, DAWN, 1, 0)
 
-			if not getUpStarted and t >= GETUP and getUpTrack then
-				getUpStarted = true
-				getUpTrack:AdjustSpeed(1)
-			end
-			local getUpEnd = GETUP + (if getUpTrack and getUpTrack.Length > 0 then getUpTrack.Length else 4.6)
-			if not idleStarted and idleTrack and (t >= getUpEnd - 0.4 or not getUpTrack) and t >= GETUP then
-				idleStarted = true
-				idleTrack:Play(0.6)
-			end
-
-			local ba, br = beachActor, beachRoot
-			if ba and br then
-				if getUpTrack then
-					-- the animation poses the body; we keep its lowest point on the sand
-					br.CFrame = CFrame.new(beachGround + beachUp * lift) * standCF.Rotation
-					local need = -lowestBelowRoot(ba, br, beachUp)
-					lift += (need - lift) * (1 - math.exp(-dt * 12))
-				else
-					-- R6 avatars: no get-up clip, so tip the whole body up instead
-					local up = smooth((t - GETUP) / 1.6)
-					br.CFrame = proneCF:Lerp(standCF, up)
+			for _, wk in wakers do
+				local start = GETUP + wk.delay
+				if not wk.started and t >= start and wk.getUp then
+					wk.started = true
+					wk.getUp:AdjustSpeed(1)
+				end
+				local getUpEnd = start + (if wk.getUp and wk.getUp.Length > 0 then wk.getUp.Length else 4.6)
+				if not wk.idling and wk.idle and (t >= getUpEnd - 0.4 or not wk.getUp) and t >= start then
+					wk.idling = true
+					wk.idle:Play(0.6)
+				end
+				local ba, br = wk.model, wk.root
+				if ba and br then
+					if wk.getUp then
+						-- the animation poses the body; we keep its lowest point on the sand
+						br.CFrame = CFrame.new(wk.ground + beachUp * wk.lift) * wk.standCF.Rotation
+						local need = -lowestBelowRoot(ba, br, beachUp)
+						wk.lift += (need - wk.lift) * (1 - math.exp(-dt * 12))
+					else
+						-- R6 avatars: no get-up clip, so tip the whole body up instead
+						local up = smooth((t - start) / 1.6)
+						br.CFrame = wk.proneCF:Lerp(wk.standCF, up)
+					end
 				end
 			end
 
@@ -972,9 +1102,14 @@ function IntroController.Start()
 		task.wait(0.3)
 	end
 	ui.fade.BackgroundTransparency = 0
+	if liveWave then
+		liveWave:destroy()
+	end
 	scene:Destroy()
-	if template then
-		template:Destroy()
+	for _, c in actors do
+		if c.model then
+			c.model:Destroy()
+		end
 	end
 	grade:Destroy()
 	if atmosphere then

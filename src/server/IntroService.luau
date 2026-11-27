@@ -1,6 +1,11 @@
 --!strict
--- IntroService: after the intro cutscene a player wakes up on the beach where the story left
--- them (Config.World.IntroBeach), facing the lighthouse. Only once per player per server.
+-- IntroService: the party's intro cutscene.
+--   * Waits for the whole party to arrive (the TeleportData from the harbor says how many),
+--     then publishes IntroCast ("id,id,...") and IntroStartAt (server time) on
+--     ReplicatedStorage so every client plays the same film, with everyone in it, in sync.
+--   * Keeps the party's characters streamed to every client (the film clones them).
+--   * After the film each player wakes on the beach where their actor lay (side by side,
+--     slot by cast order), facing the lighthouse. Only once per player per server.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +18,60 @@ local StormDirector = require(script.Parent:WaitForChild("StormDirector"))
 
 local IntroService = {}
 local done: { [Player]: boolean } = {}
+local cast: { number } = {}
+
+local SLOT_SPACING = 4.2 -- must match Client/IntroController (slotGround)
+
+-- How many players the harbor sent over together (1 if unknown, e.g. Studio)
+local function expectedPartySize(): number
+	local best = 0
+	for _, p in Players:GetPlayers() do
+		local ok, data = pcall(function()
+			return p:GetJoinData().TeleportData
+		end)
+		if ok and typeof(data) == "table" and typeof(data.party) == "table" then
+			best = math.max(best, #data.party)
+		end
+	end
+	return math.max(best, #Players:GetPlayers(), 1)
+end
+
+-- Pick the cast once the party is here (or after a timeout), then a shared start time
+local function scheduleIntro()
+	while #Players:GetPlayers() == 0 do
+		task.wait(0.2)
+	end
+	local deadline = os.clock() + 20
+	while #Players:GetPlayers() < expectedPartySize() and os.clock() < deadline do
+		task.wait(0.25)
+	end
+	-- let avatars finish loading so nobody appears half-dressed in the film
+	local t = os.clock()
+	while os.clock() - t < 6 do
+		local ready = true
+		for _, p in Players:GetPlayers() do
+			if not (p.Character and p:HasAppearanceLoaded()) then
+				ready = false
+			end
+		end
+		if ready then
+			break
+		end
+		task.wait(0.2)
+	end
+	local ids = {}
+	for _, p in Players:GetPlayers() do
+		table.insert(ids, p.UserId)
+	end
+	table.sort(ids)
+	cast = ids
+	local text = {}
+	for _, id in ids do
+		table.insert(text, tostring(id))
+	end
+	ReplicatedStorage:SetAttribute("IntroCast", table.concat(text, ","))
+	ReplicatedStorage:SetAttribute("IntroStartAt", Workspace:GetServerTimeNow() + 2.5)
+end
 
 function IntroService.Start()
 	-- the intro films out at sea and on the south beach, far from where you spawn: until it
@@ -72,6 +131,24 @@ function IntroService.Start()
 		onPlayer(player)
 	end
 
+	-- the film clones every party member: keep all characters streamed to every client
+	local function persist(player: Player)
+		local function apply(character: Model)
+			character.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+		end
+		player.CharacterAdded:Connect(apply)
+		if player.Character then
+			apply(player.Character)
+		end
+	end
+	Players.PlayerAdded:Connect(persist)
+	for _, player in Players:GetPlayers() do
+		persist(player)
+	end
+	if Config.Intro and Config.Intro.Enabled then
+		task.spawn(scheduleIntro)
+	end
+
 	Remotes.event("IntroDone").OnServerEvent:Connect(function(player: Player)
 		releaseFocus(player)
 		if done[player] then
@@ -87,13 +164,24 @@ function IntroService.Start()
 		if not character then
 			return
 		end
-		local spot = beach + Vector3.new(math.random(-4, 4), 0, math.random(-4, 4))
 		local ray = RaycastParams.new()
 		ray.FilterType = Enum.RaycastFilterType.Include
 		ray.FilterDescendantsInstances = { Workspace.Terrain }
-		local hit = Workspace:Raycast(spot + Vector3.new(0, 60, 0), Vector3.new(0, -120, 0), ray)
-		spot = (if hit then hit.Position else spot) + Vector3.new(0, 3, 0)
 		local tower = Config.World.TowerCenter
+		-- wake where your actor lay in the film: side by side across the beach, in cast order
+		local spot: Vector3
+		local slot = table.find(cast, player.UserId)
+		local centerHit = Workspace:Raycast(beach + Vector3.new(0, 80, 0), Vector3.new(0, -200, 0), ray)
+		local center = if centerHit then centerHit.Position else beach
+		if slot then
+			local toward = (Vector3.new(tower.X, 0, tower.Z) - Vector3.new(center.X, 0, center.Z)).Unit
+			local right = CFrame.lookAt(center, center + toward).RightVector
+			spot = center + right * ((slot - (#cast + 1) / 2) * SLOT_SPACING)
+		else
+			spot = beach + Vector3.new(math.random(-4, 4), 0, math.random(-4, 4))
+		end
+		local hit = Workspace:Raycast(spot + Vector3.new(0, 80, 0), Vector3.new(0, -200, 0), ray)
+		spot = (if hit then hit.Position else spot) + Vector3.new(0, 3, 0)
 		character:PivotTo(CFrame.lookAt(spot, Vector3.new(tower.X, spot.Y, tower.Z)))
 		Remotes.notify(player, "You wash up on a strange island. Find the lighthouse.", "Good")
 	end)
