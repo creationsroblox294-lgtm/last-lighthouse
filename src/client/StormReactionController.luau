@@ -5,8 +5,9 @@
 --   * cold (Whiteout, Freezing Rain, Hailstorm, or the player's "Chill"): arms pulled in, shivering
 --   * hail / falling things: an arm up over the head
 --   * lightning nearby: a quick flinch
--- It only bends joints on top of the normal animations (Motor6D.C0 offsets in the torso's
--- space), on every client for every character, so nothing is sent over the network.
+-- It only bends joints on top of the normal animations (it adds to Motor6D.Transform right
+-- after the Animator has posed the rig; C0 is read-only on client characters), on every
+-- client for every character, so nothing is sent over the network.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -40,7 +41,8 @@ local WIND: { [string]: number } = {
 local COLD: { [string]: number } = { Whiteout = 1, FreezingRain = 0.8, Hailstorm = 0.45 }
 local COVER: { [string]: number } = { Hailstorm = 1, Starfall = 0.5, FishRain = 0.6, Deluge = 0.35 }
 
-type Joint = { motor: Motor6D, base: CFrame }
+-- a Motor6D, or an AnimationConstraint on avatars that use the newer joint system
+type Joint = { motor: any, rot: CFrame, pose: CFrame, last: CFrame? }
 type Rig = {
 	character: Model,
 	waist: Joint?,
@@ -56,9 +58,13 @@ type Rig = {
 local rigs: { [Model]: Rig } = {}
 
 local function joint(parent: Instance?, name: string): Joint?
-	local m = parent and parent:FindFirstChild(name)
+	-- joints can replicate a moment after their parts
+	local m = parent and parent:WaitForChild(name, 5)
 	if m and m:IsA("Motor6D") then
-		return { motor = m, base = m.C0 }
+		return { motor = m, rot = m.C0.Rotation, pose = CFrame.identity, last = nil }
+	elseif m and m:IsA("AnimationConstraint") then
+		local a0 = m.Attachment0
+		return { motor = m, rot = if a0 then a0.CFrame.Rotation else CFrame.identity, pose = CFrame.identity, last = nil }
 	end
 	return nil
 end
@@ -80,8 +86,8 @@ local function track(character: Model)
 			character = character,
 			waist = joint(upper, "Waist"),
 			neck = joint(head, "Neck"),
-			rShoulder = joint(character:FindFirstChild("RightUpperArm"), "RightShoulder"),
-			lShoulder = joint(character:FindFirstChild("LeftUpperArm"), "LeftShoulder"),
+			rShoulder = joint(character:WaitForChild("RightUpperArm", 5), "RightShoulder"),
+			lShoulder = joint(character:WaitForChild("LeftUpperArm", 5), "LeftShoulder"),
 			torso = upper,
 			flinch = 0,
 			lean = Vector3.zero,
@@ -106,20 +112,28 @@ local function track(character: Model)
 		}
 	end
 	rigs[character] = rig
-	character.AncestryChanged:Connect(function()
-		if not character:IsDescendantOf(Workspace) then
-			rigs[character] = nil
-		end
+	-- (the intro hides the character for a while, so only forget it once it's destroyed)
+	character.Destroying:Connect(function()
+		rigs[character] = nil
 	end)
 end
 
 -- bend a joint by `r`, a rotation expressed in its parent part's space (so the same numbers
--- work for R6 and R15 joints, whatever their C0 axes are)
+-- work for R6 and R15 joints, whatever their C0 axes are), on top of the animated pose
 local function bend(j: Joint?, r: CFrame)
 	if not j or not j.motor.Parent or not j.motor.Enabled then
 		return
 	end
-	j.motor.C0 = CFrame.new(j.base.Position) * r * j.base.Rotation
+	local current = j.motor.Transform
+	-- if no animation rewrote the joint since last frame, start again from the clean pose so
+	-- the offset doesn't pile up
+	if j.last and current == j.last then
+		current = j.pose
+	end
+	j.pose = current
+	local out = j.rot:Inverse() * r * j.rot * current
+	j.motor.Transform = out
+	j.last = out
 end
 
 local function watchPlayer(player: Player)
@@ -148,9 +162,10 @@ function StormReactionController.Start()
 		end
 	end)
 
-	-- the storm's strength eases in and out with the phases
+	-- the storm's strength eases in and out with the phases. Stepped runs after the Animator
+	-- has set this frame's pose.
 	local level = 0
-	RunService.RenderStepped:Connect(function(dt)
+	RunService.Stepped:Connect(function(_time, dt)
 		local phase = state:GetAttribute("Phase")
 		local id = state:GetAttribute("StormType")
 		local sid = if typeof(id) == "string" then id else "Ordinary"
@@ -175,6 +190,9 @@ function StormReactionController.Start()
 		local gustPower = 0.65 + 0.45 * math.clamp(gust.Magnitude, 0, 1.3)
 
 		for character, rig in rigs do
+			if not character.Parent then
+				continue
+			end
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			if not humanoid or humanoid.Health <= 0 then
 				continue

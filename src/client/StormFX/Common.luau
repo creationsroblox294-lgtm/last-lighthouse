@@ -22,7 +22,7 @@ Common.FADE = 8
 Common.TEX = {
 	SoftGlow = "rbxassetid://105240361456761",
 	SoftRing = "rbxassetid://140406055990704",
-	BoltBeam = "rbxassetid://132135086295918",
+	BoltBeam = "rbxassetid://100276400296878", -- soft across the width, even along the length
 	Wisp = "rbxassetid://118122779843195",
 	Streak = "rbxassetid://129570712436307",
 }
@@ -316,7 +316,7 @@ function Common.boltSegment(ctx: Ctx, a: Vector3, b: Vector3, w: number, core: C
 	holder.Material = Enum.Material.SmoothPlastic
 	holder.CFrame = CFrame.lookAt((a + b) / 2, b + Vector3.new(0, 0.001, 0))
 	-- overlap the joints a little so a jagged bolt reads as one line
-	local reach = len / 2 + w * 0.6
+	local reach = len / 2 + w * 0.3
 	local a0 = Instance.new("Attachment")
 	a0.Position = Vector3.new(0, 0, reach)
 	a0.Parent = holder
@@ -335,7 +335,7 @@ function Common.boltSegment(ctx: Ctx, a: Vector3, b: Vector3, w: number, core: C
 		bm.Brightness = bright
 		bm.Color = ColorSequence.new(color)
 		bm.Width0 = width
-		bm.Width1 = width * 0.85
+		bm.Width1 = width
 		bm.Segments = 1
 		bm.Transparency = NumberSequence.new(base)
 		bm:SetAttribute("Base", base)
@@ -343,7 +343,7 @@ function Common.boltSegment(ctx: Ctx, a: Vector3, b: Vector3, w: number, core: C
 		return bm
 	end
 	local beams = {
-		beam(w * 1.8, core, 0, 4),
+		beam(w * 2, core, 0, 5),
 		beam(w * 7, halo, haloAlpha or 0.55, 2),
 	}
 	local function sync()

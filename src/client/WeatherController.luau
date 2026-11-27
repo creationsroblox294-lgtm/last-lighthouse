@@ -38,8 +38,8 @@ function WeatherController.Start()
 		NumberSequenceKeypoint.new(0.85, 0.5),
 		NumberSequenceKeypoint.new(1, 1),
 	})
-	rain.Size = NumberSequence.new(0.22)
-	rain.Squash = NumberSequence.new(-2.4) -- tall, thin streaks
+	rain.Size = NumberSequence.new(0.4)
+	rain.Squash = NumberSequence.new(2.6) -- tall, thin streaks
 	rain.Lifetime = NumberRange.new(1.1, 1.3)
 	rain.Speed = NumberRange.new(70, 90)
 	rain.EmissionDirection = Enum.NormalId.Bottom

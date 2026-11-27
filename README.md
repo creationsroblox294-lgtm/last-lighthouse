@@ -258,3 +258,20 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
 - Used on: the storm, lamp and storage panels and every HUD bar (tinted by storm phase),
   the stamina bar, the minimap's porthole ring, the big map's frame / title plaque / brass X,
   the intro's name plate title and parchment caption scroll.
+
+## Flowing storms (shared upgrade)
+- `StormFX/Common`: eased (smoothstep) fade in/out over 8 s; a gusting wind (`ctx.gust`,
+  `Common.gustAt`) sways all falling and floating particles; clouds and colour grade follow the
+  same ramp; lightning (`Common.boltSegment`) is soft camera-facing beams instead of neon blocks
+  (Thunderhead, Rolling Thunder, Lucky Lightning, Blackout, Ember). Soft textures in `assets/fx`
+  (`Common.TEX`).
+- `StormFXController`: the storm's look starts rolling in during the Warning (30%) and is rebuilt
+  at full strength when the storm begins; fades out at dawn.
+- `WeatherController`: plain rain uses streaks, eases in/out, sways; the wave shake is smooth noise.
+- `FogController`: the clock only runs forward, so dawn rolls through the night instead of jumping;
+  longer phase blends (`Config.LookTweenSeconds`).
+- `StormReactionController` (new): characters lean into the wind, hunch in storms, shiver and
+  hug themselves in the cold, cover their heads under hail and flinch at nearby lightning. It
+  adds to `Transform` after the Animator (works with Motor6D and AnimationConstraint joints).
+- Creatures fade in out of a puff of fog and dissolve into fog when they die; animation
+  cross-fades are longer and eased.
