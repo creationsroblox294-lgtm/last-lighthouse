@@ -67,12 +67,15 @@ if mode == "Lobby" then
 		launched:Fire()
 	end)
 	LobbyService.Start()
+	local LeaderboardService = require(Server:WaitForChild("LeaderboardService"))
+	LeaderboardService.Start()
 	if not RunService:IsStudio() then
 		-- a real lobby server never runs the game
 		return
 	end
 	launched.Event:Wait()
 	LobbyService.Stop()
+	LeaderboardService.Stop()
 	-- Studio: become the game, with everyone on this server as the party
 	showWorld("Game")
 	GameMode.Set("Game")

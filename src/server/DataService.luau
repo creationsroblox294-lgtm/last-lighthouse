@@ -32,6 +32,7 @@ export type Profile = {
 	Title: string,
 	Lantern: string, -- "" = none
 	DailyDay: number, -- UTC day number of the last daily bonus
+	Redeemed: { [string]: boolean }, -- codes already used
 	Version: number,
 }
 
@@ -52,6 +53,7 @@ local function defaultProfile(): Profile
 		Title = "Castaway",
 		Lantern = "",
 		DailyDay = 0,
+		Redeemed = {},
 		Version = 2,
 	}
 end
@@ -77,6 +79,13 @@ local function reconcile(data: any): Profile
 		end
 	end
 	profile.Owned = owned
+	local redeemed = {}
+	for code, used in profile.Redeemed do
+		if typeof(code) == "string" and used == true then
+			redeemed[code] = true
+		end
+	end
+	profile.Redeemed = redeemed
 	profile.Version = 2
 	return profile
 end
@@ -101,6 +110,7 @@ local function updateLeaderstats(player: Player)
 	end
 	player:SetAttribute("KeeperLevel", levelOf(profile))
 	player:SetAttribute("Brass", profile.Brass)
+	player:SetAttribute("BrassEarned", profile.BrassEarned)
 end
 
 local loadedEvent = Instance.new("BindableEvent")
@@ -184,6 +194,15 @@ local function save(player: Player, release: boolean)
 			end)
 		end)
 		if ok then
+			-- the harbor's leaderboards read these (LeaderboardService)
+			for _, board in Config.Keeper.Boards :: { any } do
+				local value = (profile :: any)[board.Stat]
+				if typeof(value) == "number" and value > 0 then
+					pcall(function()
+						DataStoreService:GetOrderedDataStore("Board_" .. board.Stat):SetAsync(tostring(player.UserId), math.floor(value))
+					end)
+				end
+			end
 			return
 		end
 		warn("[DataService] save failed:", err)

@@ -409,6 +409,10 @@ end
 
 -- public hooks ---------------------------------------------------------------
 
+function HollowService.GetModel(): Model?
+	return model
+end
+
 function HollowService.GetPosition(): Vector3?
 	return if model then pos else nil
 end

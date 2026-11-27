@@ -448,3 +448,13 @@ Persistent progress that brings players back (`Server/KeeperService`, `Client/Ke
 - **Fixes:**
   - Players no longer get a second set of tools.
   - The intro's wave stays hidden until it rises.
+
+## Harbor lobby extras
+- **PLAY button** (bottom centre, green): `QuickPlay` puts you on a boat whose party has room, or else a free boat.
+- **Boarding pads**: neon `PadGlow` outlines on each boat deck pulse white (free) or gold (room in a party).
+- **Leaderboards**: three boards behind the boats (`Lobby.Boards`, built by `tools/BuildLobbyBoards.luau`): Furthest Storm, Brass Earned, Lights Kept. `DataService` writes OrderedDataStores `Board_<Stat>` on save; `LeaderboardService` shows the top 8 (falls back to this server's players in Studio). Each client fills its own "You" row.
+- **Invite / Codes** buttons on the right edge. Codes live in `Config.Keeper.Codes` (each pays once per player, stored in `profile.Redeemed`).
+- A red badge on the Locker button counts things you can afford right now.
+
+## Hit feel
+When your punch or harpoon lands, the server sends `HitConfirm` to you only, and `HitFeelController` plays hit-stop, a camera kick + shake, an FOV punch, a white flash on the creature, an impact ring and sparks, a damage number, a hit sound and gamepad rumble. A killing blow is stronger (gold edge flash, "SLAIN"). Tune it in `Config.HitFeel`. Sounds: `assets/sfx/` (made by `synth.py`), uploaded as 96700475412033 (punch), 130682457262620 (harpoon), 91238871466493 (kill).

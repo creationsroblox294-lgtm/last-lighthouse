@@ -388,6 +388,28 @@ local function buy(player: Player, id: any)
 	dress(player)
 end
 
+local function redeem(player: Player, code: any)
+	if typeof(code) ~= "string" or #code > 40 or throttled(player) then
+		return
+	end
+	local profile = DataService.GetProfile(player)
+	if not profile then
+		return
+	end
+	local key = string.upper((string.gsub(code, "%s", "")))
+	local amount = (K.Codes :: any)[key]
+	if typeof(amount) ~= "number" then
+		Remotes.notify(player, "That code doesn't work.", nil)
+		return
+	end
+	if profile.Redeemed[key] then
+		Remotes.notify(player, "You've already used that code.", nil)
+		return
+	end
+	profile.Redeemed[key] = true
+	KeeperService.Award(player, amount, `Code {key}`)
+end
+
 local function equip(player: Player, slot: any, id: any)
 	if typeof(slot) ~= "string" or typeof(id) ~= "string" or throttled(player) then
 		return
@@ -456,6 +478,7 @@ function KeeperService.Start()
 	started = true
 	Remotes.event("KeeperBuy").OnServerEvent:Connect(buy)
 	Remotes.event("KeeperEquip").OnServerEvent:Connect(equip)
+	Remotes.event("RedeemCode").OnServerEvent:Connect(redeem)
 	Remotes.event("Earned")
 	DataService.Loaded:Connect(setUp)
 	for _, player in Players:GetPlayers() do

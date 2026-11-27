@@ -21,6 +21,7 @@ local PunchService = {}
 
 local lastPunch: { [Player]: number } = {}
 local hitRemote: RemoteEvent
+local confirmRemote: RemoteEvent
 
 local function treeInFront(root: BasePart): (Model?, BasePart?)
 	local map = Workspace:FindFirstChild("Map")
@@ -75,11 +76,14 @@ local function punch(player: Player)
 		local troot = target.Parent and target.Parent:FindFirstChild("HumanoidRootPart")
 		local at = if troot and troot:IsA("BasePart") then troot.Position else root.Position + look * 3
 		hitRemote:FireAllClients(at, "Creature", target.Parent)
+		confirmRemote:FireClient(player, at, target.Parent, C.PunchDamage, target.Health <= 0, "Punch")
 		return
 	end
 	-- 2) the Hollow (punching it is as good as a harpoon hit, but you have to be close)
 	if HollowService.TryHarpoon(root.Position, look, C.PunchRange + 3, C.PunchConeDegrees) then
 		hitRemote:FireAllClients(root.Position + look * 4, "Creature", nil)
+		local hp = HollowService.GetPosition()
+		confirmRemote:FireClient(player, if hp then hp + Vector3.new(0, 5, 0) else root.Position + look * 4, HollowService.GetModel(), 0, false, "Punch")
 		return
 	end
 	-- 3) trees
@@ -96,6 +100,7 @@ end
 
 function PunchService.Start()
 	hitRemote = Remotes.event("PunchHit")
+	confirmRemote = Remotes.event("HitConfirm")
 	Remotes.event("Punch").OnServerEvent:Connect(punch)
 	Players.PlayerRemoving:Connect(function(player)
 		lastPunch[player] = nil

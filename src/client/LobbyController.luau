@@ -371,6 +371,40 @@ local function makeUi(): Ui
 	local change = button(aboard, "Party size", UDim2.new(0, 170, 0, 48), UDim2.new(0.5, 92, 0, 86), 22)
 	change.Name = "ChangeSize"
 	aboard.Parent = gui
+	-- the big PLAY button: hop into a party that has room, or take a free boat
+	local play = Instance.new("TextButton")
+	play.Name = "Play"
+	play.AnchorPoint = Vector2.new(0.5, 1)
+	play.Position = UDim2.new(0.5, 0, 1, -30)
+	play.Size = UDim2.fromOffset(300, 84)
+	play.BackgroundColor3 = Color3.fromRGB(86, 196, 96)
+	play.AutoButtonColor = true
+	play.Font = Enum.Font.GothamBlack
+	play.Text = "PLAY"
+	play.TextScaled = true
+	play.TextColor3 = Color3.new(1, 1, 1)
+	play.TextStrokeColor3 = Color3.fromRGB(14, 46, 18)
+	play.TextStrokeTransparency = 0
+	play.ZIndex = 4
+	local playCorner = Instance.new("UICorner")
+	playCorner.CornerRadius = UDim.new(0, 12)
+	playCorner.Parent = play
+	local playStroke = Instance.new("UIStroke")
+	playStroke.Color = Color3.fromRGB(20, 40, 18)
+	playStroke.Thickness = 4
+	playStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	playStroke.Parent = play
+	local playGrad = Instance.new("UIGradient")
+	playGrad.Rotation = 90
+	playGrad.Color = ColorSequence.new(Color3.fromRGB(170, 255, 160), Color3.fromRGB(90, 170, 80))
+	playGrad.Parent = play
+	local playPad = Instance.new("UIPadding")
+	playPad.PaddingTop = UDim.new(0, 12)
+	playPad.PaddingBottom = UDim.new(0, 10)
+	playPad.Parent = play
+	local playScale = Instance.new("UIScale")
+	playScale.Parent = play
+	play.Parent = gui
 	-- party picker (the boat's leader): how many sailors?
 	local picker = Instance.new("Frame")
 	picker.Name = "PartyPicker"
@@ -409,6 +443,8 @@ local function makeUi(): Ui
 	return {
 		gui = gui,
 		aboard = aboard,
+		play = play,
+		playScale = playScale,
 		aboardTitle = aboardTitle,
 		aboardInfo = aboardInfo,
 		leave = leave,
@@ -552,6 +588,12 @@ function LobbyController.Start()
 			table.insert(flickers, { light = d, base = d.Parent:GetAttribute("Flicker") :: number, phase = math.random() * 100, part = d.Parent :: BasePart })
 		elseif d:IsA("BasePart") and typeof(d:GetAttribute("Blink")) == "number" then
 			table.insert(blinkers, { part = d, phase = d:GetAttribute("Blink") :: number })
+		end
+	end
+	local pads: { BasePart } = {}
+	for _, d in lobby:GetDescendants() do
+		if d:IsA("BasePart") and d.Name == "PadGlow" then
+			table.insert(pads, d)
 		end
 	end
 	local bell = lobby:FindFirstChild("Bell", true) :: BasePart?
@@ -699,8 +741,12 @@ function LobbyController.Start()
 			pickerOpen = false
 		end
 		ui.hint.Visible = not shown
+		ui.play.Visible = not shown and not picking and myCastOff == 0
 	end
 
+	table.insert(connections, ui.play.Activated:Connect(function()
+		Remotes.event("QuickPlay"):FireServer()
+	end))
 	table.insert(connections, ui.leave.Activated:Connect(function()
 		Remotes.event("LeaveBoat"):FireServer()
 	end))
@@ -760,6 +806,17 @@ function LobbyController.Start()
 			for p, off in s.offsets do
 				p.CFrame = cf * off
 			end
+		end
+		-- the PLAY button breathes; the boats' boarding pads glow (white: free, gold: room in a party)
+		ui.playScale.Scale = 1 + math.sin(clock * 3) * 0.03
+		for _, pad in pads do
+			local boat = pad.Parent :: Instance
+			local count = boat:GetAttribute("Count") or 0
+			local cap = boat:GetAttribute("Capacity") or 0
+			local free = count == 0
+			local room = cap > 0 and count < cap
+			pad.Transparency = if free or room then 0.1 + (math.sin(clock * 3.2) * 0.5 + 0.5) * 0.45 else 0.85
+			pad.Color = if room then Color3.fromRGB(255, 206, 110) else Color3.fromRGB(255, 240, 214)
 		end
 		-- flames flicker
 		for _, f in flickers do

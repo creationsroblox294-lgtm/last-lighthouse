@@ -190,6 +190,7 @@ local function harpoon(player: Player)
 			local hp = HollowService.GetPosition()
 			if hp then
 				streak(root.Position + Vector3.new(0, 1, 0), hp + Vector3.new(0, 5, 0))
+				Remotes.event("HitConfirm"):FireClient(player, hp + Vector3.new(0, 5, 0), HollowService.GetModel(), 0, false, "Harpoon")
 			end
 		end
 		return
@@ -198,7 +199,12 @@ local function harpoon(player: Player)
 	if targetRoot and targetRoot:IsA("BasePart") then
 		streak(root.Position + Vector3.new(0, 1, 0), targetRoot.Position)
 	end
-	target:TakeDamage(harpoonStat(player, Config.Crafting.HarpoonDamage, C.HarpoonDamage))
+	local wasAlive = target.Health > 0
+	local damage = harpoonStat(player, Config.Crafting.HarpoonDamage, C.HarpoonDamage)
+	target:TakeDamage(damage)
+	local killed = wasAlive and target.Health <= 0
+	local at = if targetRoot and targetRoot:IsA("BasePart") then targetRoot.Position else root.Position + root.CFrame.LookVector * 6
+	Remotes.event("HitConfirm"):FireClient(player, at, target.Parent, damage, killed, "Harpoon")
 	if target.Health <= 0 then
 		Rewards.Give(player, "Kill")
 	end

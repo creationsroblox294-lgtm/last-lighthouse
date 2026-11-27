@@ -29,6 +29,9 @@ local EVENT_NAMES = {
 	"KeeperBuy", -- client -> server: (id: string) buy a perk tier, lantern or title at the Keeper's Locker
 	"KeeperEquip", -- client -> server: (slot: "Lantern" | "Title", id: string) wear something you own
 	"Earned", -- server -> client: (amount: number, reason: string) Brass just paid to you
+	"RedeemCode", -- client -> server: (code: string) redeem a code for Brass
+	"HitConfirm", -- server -> attacker: (at: Vector3, target: Instance?, damage: number, killed: boolean, weapon: string) your hit landed
+	"QuickPlay", -- client -> server: () the big PLAY button: put me on the best boat
 }
 
 local Remotes = {}

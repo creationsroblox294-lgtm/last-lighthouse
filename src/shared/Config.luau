@@ -402,6 +402,19 @@ Config.Keeper = {
 		{ Id = "Violet", Name = "Storm-Violet Lantern", Cost = 1000, Color = Color3.fromRGB(186, 110, 255), Blurb = "Burns the colour of lightning in a storm cloud." },
 		{ Id = "Gilded", Name = "Gilded Keeper's Lantern", Cost = 2500, Color = Color3.fromRGB(255, 222, 120), Sparkle = true, Blurb = "Solid gold, and it throws sparks. Only real keepers carry one." },
 	},
+	-- Codes (the Codes button): each pays Brass once per player. Upper-case; players can type any case.
+	Codes = {
+		LIGHTHOUSE = 100,
+		KEEPTHELIGHT = 75,
+		STORMCHASER = 50,
+	},
+	-- In-world leaderboards in the harbor (LeaderboardService): saved stat -> board title
+	Boards = {
+		{ Stat = "BestStorm", Title = "FURTHEST STORM", Suffix = "" },
+		{ Stat = "BrassEarned", Title = "BRASS EARNED", Suffix = "" },
+		{ Stat = "RunsWon", Title = "LIGHTS KEPT", Suffix = "" },
+	},
+	BoardRefreshSeconds = 60,
 	-- Titles over your head. Some are bought; some can only be earned.
 	Titles = {
 		{ Id = "Castaway", Name = "Castaway", Color = Color3.fromRGB(210, 210, 210), Blurb = "Everyone starts somewhere." },
@@ -531,6 +544,20 @@ Config.UI = {
 ---------------------------------------------------------------------------
 -- The harbor lobby (public servers). Boats take parties of 1-4 to their own game.
 ---------------------------------------------------------------------------
+-- Hit feel: what the attacker feels on screen when a punch or harpoon lands (HitFeelController).
+-- Sounds are made by assets/sfx/synth.py. An empty id means that sound is skipped.
+Config.HitFeel = {
+	Sounds = {
+		Punch = "rbxassetid://96700475412033",
+		Harpoon = "rbxassetid://130682457262620",
+		Kill = "rbxassetid://91238871466493",
+	},
+	-- per weapon: hit-stop seconds, camera kick (degrees), shake trauma, FOV punch, pad rumble
+	Punch = { Stop = 0.05, Kick = 1.6, Trauma = 0.35, Fov = 2.5, Rumble = 0.45 },
+	Harpoon = { Stop = 0.07, Kick = 2.6, Trauma = 0.5, Fov = 4, Rumble = 0.7 },
+	Kill = { Stop = 0.12, Kick = 3.5, Trauma = 0.8, Fov = 7, Rumble = 1 },
+}
+
 Config.Lobby = {
 	Center = Vector3.new(3200, 0, 0), -- Workspace.Lobby is built here (tools/BuildLobby.luau)
 	PartySize = 4, -- most sailors a party (boat) can have; the leader picks 1-4

@@ -321,6 +321,45 @@ function LobbyService.Start()
 		end
 	end)
 
+	-- the big PLAY button: join a party that has room, or else take a free boat
+	local lastQuick: { [Player]: number } = {}
+	Remotes.event("QuickPlay").OnServerEvent:Connect(function(player: Player)
+		local t = now()
+		if t - (lastQuick[player] or 0) < 1 or player:GetAttribute("Boat") then
+			return
+		end
+		lastQuick[player] = t
+		local root = rootOf(player)
+		if not root then
+			return
+		end
+		local pick: Boat? = nil
+		for _, boat in boats do
+			if not boat.castingOff and boat.size and #boat.passengers < boat.size then
+				pick = boat
+				break
+			end
+		end
+		if not pick then
+			for _, boat in boats do
+				if not boat.castingOff and #boat.passengers == 0 then
+					pick = boat
+					break
+				end
+			end
+		end
+		if not pick then
+			Remotes.notify(player, "Every boat is busy. One will be back in a moment!", nil)
+			return
+		end
+		-- step in: stand in the middle of the boat (step() does the rest)
+		local zone = pick.zone
+		root.CFrame = CFrame.new(zone.Position + Vector3.new(0, zone.Size.Y / 2 + 2.5, 0)) * pick.exit.CFrame.Rotation
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		lastQuick[player] = nil
+	end)
+
 	Remotes.event("LeaveBoat").OnServerEvent:Connect(function(player: Player)
 		local name = player:GetAttribute("Boat")
 		for _, boat in boats do
