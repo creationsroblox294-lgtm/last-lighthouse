@@ -179,7 +179,7 @@ function Player.play(self: AnimPlayer, clipName: string, speed: number?, fadeSec
 	self.time = 0
 	self.fadeFrom = table.clone(self.last)
 	self.fade = if fadeSeconds == 0 then 1 else 0
-	self.fadeRate = 1 / (fadeSeconds or 0.18)
+	self.fadeRate = 1 / (fadeSeconds or 0.32)
 end
 
 function Player.isFinished(self: AnimPlayer): boolean
@@ -221,7 +221,9 @@ function Player.step(self: AnimPlayer, dt: number)
 			if self.fade < 1 then
 				local from = self.fadeFrom[name]
 				if from then
-					cf = from:Lerp(cf, self.fade)
+					-- eased cross-fade: the old pose lets go gently instead of linearly
+					local k = self.fade * self.fade * (3 - 2 * self.fade)
+					cf = from:Lerp(cf, k)
 				end
 			end
 			bone.Transform = cf

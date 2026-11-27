@@ -79,20 +79,7 @@ return function(ctx: Common.Ctx)
 	local function bolt(to: Vector3, height: number, thickness: number, r: Random): { BasePart }
 		local parts: { BasePart } = {}
 		local function segment(a: Vector3, b: Vector3, w: number)
-			local len = (b - a).Magnitude
-			local cf = CFrame.lookAt((a + b) / 2, b)
-			local core = Common.part(ctx, "BoltCore", Vector3.new(w, w, len))
-			core.Material = Enum.Material.Neon
-			core.Color = CORE
-			core.Transparency = 0
-			core.CFrame = cf
-			local halo = Common.part(ctx, "BoltHalo", Vector3.new(w * 4, w * 4, len))
-			halo.Material = Enum.Material.Neon
-			halo.Color = ARC
-			halo.Transparency = 0.68
-			halo.CFrame = cf
-			table.insert(parts, core)
-			table.insert(parts, halo)
+			table.insert(parts, Common.boltSegment(ctx, a, b, w, CORE, ARC, 0.6))
 		end
 		local function path(from: Vector3, target: Vector3, w: number, steps: number, depth: number)
 			local prev = from

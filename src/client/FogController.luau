@@ -47,10 +47,28 @@ local function apply(phase: string, instant: boolean)
 	local seconds = if instant then 0 else ((Config.LookTweenSeconds :: any)[phase] or 5)
 	local info = TweenInfo.new(seconds, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 
-	-- The clock jumps at dawn: tweening it backwards would flash through midday.
-	local jumpClock = instant or phase == "Dawn"
+	-- The clock only ever runs forwards: at dawn it rolls on through the rest of the night to
+	-- sunrise (tweening it backwards would flash through midday).
+	local jumpClock = instant
 	if jumpClock then
 		Lighting.ClockTime = look.ClockTime
+	else
+		local from = Lighting.ClockTime
+		local to = look.ClockTime
+		if to < from then
+			to += 24
+		end
+		local clock = Instance.new("NumberValue")
+		clock.Value = from
+		clock.Changed:Connect(function(v)
+			Lighting.ClockTime = v % 24
+		end)
+		local clockTween = TweenService:Create(clock, info, { Value = to })
+		clockTween.Completed:Once(function()
+			clock:Destroy()
+		end)
+		table.insert(activeTweens, clockTween)
+		clockTween:Play()
 	end
 
 	local lightingGoal: { [string]: any } = {
@@ -59,9 +77,6 @@ local function apply(phase: string, instant: boolean)
 		OutdoorAmbient = look.Ambient,
 		ExposureCompensation = look.Exposure or 0,
 	}
-	if not jumpClock then
-		lightingGoal.ClockTime = look.ClockTime
-	end
 
 	local atmosphereGoal: { [string]: any } = {
 		Density = look.FogDensity,

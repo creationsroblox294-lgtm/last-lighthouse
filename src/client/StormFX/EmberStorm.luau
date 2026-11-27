@@ -239,12 +239,7 @@ return function(ctx: Common.Ctx)
 			if k < segs then
 				p += Vector3.new(rnd:NextNumber(-1, 1), 0, rnd:NextNumber(-1, 1)) * 14
 			end
-			local len = (p - prev).Magnitude
-			local seg = Common.part(ctx, "Bolt", Vector3.new(1.2, 1.2, len))
-			seg.Material = Enum.Material.Neon
-			seg.Color = Color3.fromRGB(255, 230, 200)
-			seg.Transparency = 0
-			seg.CFrame = CFrame.lookAt(prev, p) * CFrame.new(0, 0, -len / 2)
+			local seg = Common.boltSegment(ctx, prev, p, 1.2, Color3.fromRGB(255, 230, 200), Color3.fromRGB(255, 140, 60), 0.6)
 			Common.tween(seg, 0.45, { Transparency = 1 })
 			task.delay(0.6, function()
 				seg:Destroy()

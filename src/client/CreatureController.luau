@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local CreatureRig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CreatureRig"))
+local Common = require(script.Parent:WaitForChild("StormFX"):WaitForChild("Common"))
 
 local CreatureController = {}
 
@@ -38,11 +39,81 @@ local function track(model: Instance)
 	end
 	local entry: Entry = { player = player, model = model, accum = 0 }
 	entries[model] = entry
+	-- fade in out of a puff of fog instead of popping into existence
+	local parts: { BasePart } = {}
+	for _, d in visual:GetDescendants() do
+		if d:IsA("BasePart") then
+			table.insert(parts, d)
+		end
+	end
+	local function setFade(v: number)
+		for _, p in parts do
+			p.LocalTransparencyModifier = v
+		end
+	end
+	local function puff(count: number)
+		local e = Instance.new("ParticleEmitter")
+		e.Texture = Common.TEX.Wisp
+		e.Color = ColorSequence.new(Color3.fromRGB(150, 160, 175))
+		e.LightInfluence = 0.6
+		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 2), NumberSequenceKeypoint.new(1, 7) })
+		e.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.2, 0.55),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		e.Lifetime = NumberRange.new(1.2, 2)
+		e.Speed = NumberRange.new(1.5, 4)
+		e.SpreadAngle = Vector2.new(180, 40)
+		e.Acceleration = Vector3.new(0, 1.5, 0)
+		e.Drag = 1.2
+		e.Rotation = NumberRange.new(0, 360)
+		e.RotSpeed = NumberRange.new(-30, 30)
+		e.Rate = 0
+		e.Parent = body
+		e:Emit(count)
+		task.delay(2.5, function()
+			e:Destroy()
+		end)
+	end
+	if model:GetAttribute("Anim") ~= "Death" then
+		setFade(1)
+		puff(10)
+		local start = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.RenderStepped:Connect(function()
+			local k = math.clamp((os.clock() - start) / 0.8, 0, 1)
+			setFade(1 - k * k * (3 - 2 * k))
+			if k >= 1 then
+				conn:Disconnect()
+			end
+		end)
+	end
+	local dying = false
 	local function refresh()
 		local anim = model:GetAttribute("Anim")
 		local speed = model:GetAttribute("AnimSpeed")
 		if typeof(anim) == "string" then
 			player:play(anim, if typeof(speed) == "number" then speed else 1)
+		end
+		-- dissolve into fog once the death animation has mostly played
+		if anim == "Death" and not dying then
+			dying = true
+			task.delay(1.1, function()
+				if not model.Parent then
+					return
+				end
+				puff(16)
+				local start = os.clock()
+				local conn: RBXScriptConnection
+				conn = RunService.RenderStepped:Connect(function()
+					local k = math.clamp((os.clock() - start) / 1.3, 0, 1)
+					setFade(k * k * (3 - 2 * k))
+					if k >= 1 or not model.Parent then
+						conn:Disconnect()
+					end
+				end)
+			end)
 		end
 	end
 	model:GetAttributeChangedSignal("Anim"):Connect(refresh)

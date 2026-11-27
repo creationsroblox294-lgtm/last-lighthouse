@@ -1,6 +1,12 @@
 --!strict
 -- Shared building blocks for storm visuals (StormFX/<StormId> modules use these).
 -- Every effect follows the camera, fades in over FADE seconds and cleans up after itself.
+--
+-- Flow: the fade in/out is eased (smoothstep), a slow gusting wind (ctx.gust) sways every
+-- falling / floating particle so nothing moves in straight lines, sky changes (clouds, grade)
+-- follow the same eased ramp, and lightning is drawn with soft glowing beams instead of blocks.
+-- StormFXController starts a storm's look at a low level during the Warning (it rolls in) and
+-- lets it fade out at dawn.
 
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -10,16 +16,45 @@ local Workspace = game:GetService("Workspace")
 
 local Common = {}
 
-Common.FADE = 5
-Common.FALLBACK = "rbxasset://textures/particles/sparkles_main.dds"
+Common.FADE = 8
+
+-- Soft textures made for the storms (see assets/fx; used when a storm has no texture of its own)
+Common.TEX = {
+	SoftGlow = "rbxassetid://105240361456761",
+	SoftRing = "rbxassetid://140406055990704",
+	BoltBeam = "rbxassetid://132135086295918",
+	Wisp = "rbxassetid://118122779843195",
+	Streak = "rbxassetid://129570712436307",
+}
+Common.FALLBACK = Common.TEX.SoftGlow
+
+-- Fired with a world position whenever a lightning bolt appears (players flinch)
+Common.Flashed = Instance.new("BindableEvent")
 
 export type Ctx = {
 	folder: Folder,
 	textures: { [string]: string },
-	ramp: number, -- 0..1 fade-in
+	ramp: number, -- 0..1 fade-in (eased)
+	gust: Vector3, -- the slowly turning, gusting wind (length ~0..1.3)
+	time: number,
 	cleanup: { () -> () },
+	finalize: { () -> () }, -- after the fade-out has finished
 	onFrame: { (dt: number, camPos: Vector3, ramp: number) -> () },
 }
+
+local function smooth(x: number): number
+	x = math.clamp(x, 0, 1)
+	return x * x * (3 - 2 * x)
+end
+Common.smooth = smooth
+
+-- A smooth wind that wanders and gusts (same for everyone on the client)
+function Common.gustAt(t: number): Vector3
+	local x = math.noise(t * 0.07, 3.1) + 0.6 * math.noise(t * 0.31, 8.4)
+	local z = math.noise(t * 0.07, 17.7) + 0.6 * math.noise(t * 0.29, 2.2)
+	local surge = 0.65 + 0.55 * math.noise(t * 0.18, 41.3)
+	return Vector3.new(x, 0, z) * surge
+end
 
 function Common.ns(...: number): NumberSequence
 	local args = { ... }
@@ -51,7 +86,7 @@ function Common.part(ctx: Ctx, name: string, size: Vector3): Part
 end
 
 function Common.tex(ctx: Ctx, key: string): string
-	return ctx.textures[key] or Common.FALLBACK
+	return ctx.textures[key] or (Common.TEX :: any)[key] or Common.FALLBACK
 end
 
 -- A sheet above the camera that emits falling particles.
@@ -86,8 +121,13 @@ function Common.fall(ctx: Ctx, name: string, opts: { [string]: any }): ParticleE
 	local rate = opts.Rate or 800
 	local height = opts.Height or 55
 	local offset = opts.Offset or Vector3.zero
+	local slant: Vector3 = opts.Slant or Vector3.zero
+	local sway: number = opts.Sway or 14 -- how much the gusts push the fall around
 	table.insert(ctx.onFrame, function(_dt, camPos, ramp)
-		sheet.CFrame = CFrame.new(camPos + Vector3.new(0, height, 0) + offset)
+		local push = ctx.gust * sway
+		-- the sheet sits a little upwind so the slanted fall still lands around the camera
+		sheet.CFrame = CFrame.new(camPos + Vector3.new(0, height, 0) + offset - push * 0.6)
+		e.Acceleration = slant + push
 		e.Rate = rate * ramp
 	end)
 	return e
@@ -114,12 +154,16 @@ function Common.around(ctx: Ctx, name: string, size: Vector3, opts: { [string]: 
 	if opts.Orientation then
 		e.Orientation = opts.Orientation
 	end
+	e.Drag = opts.Drag or 0.35
 	e.Rate = 0
 	e.Parent = box
 	local rate = opts.Rate or 20
 	local offset = opts.Offset or Vector3.new(0, -2, 0)
+	local base: Vector3 = opts.Acceleration or Vector3.zero
+	local sway: number = opts.Sway or 2.5 -- motes drift and curl with the gusts
 	table.insert(ctx.onFrame, function(_dt, camPos, ramp)
 		box.CFrame = CFrame.new(camPos + offset)
+		e.Acceleration = base + ctx.gust * sway
 		e.Rate = rate * ramp
 	end)
 	return e
@@ -162,33 +206,41 @@ function Common.impacts(ctx: Ctx, perSecond: number, radius: number, onHit: (Enu
 	return att
 end
 
--- Tint and thicken the sky's clouds for the storm, and put them back afterwards.
+-- Tint and thicken the sky's clouds for the storm, and put them back afterwards. Follows the
+-- eased ramp, so the sky rolls in and clears with the storm.
 function Common.clouds(ctx: Ctx, goal: { [string]: any })
 	local clouds = Workspace.Terrain:FindFirstChildOfClass("Clouds")
 	if not clouds then
 		return
 	end
 	local before = { Cover = clouds.Cover, Density = clouds.Density, Color = clouds.Color }
-	Common.tween(clouds, Common.FADE, goal)
-	table.insert(ctx.cleanup, function()
-		Common.tween(clouds, Common.FADE, before)
+	local function apply(k: number)
+		if goal.Cover then
+			clouds.Cover = before.Cover + (goal.Cover - before.Cover) * k
+		end
+		if goal.Density then
+			clouds.Density = before.Density + (goal.Density - before.Density) * k
+		end
+		if goal.Color then
+			clouds.Color = before.Color:Lerp(goal.Color, k)
+		end
+	end
+	table.insert(ctx.onFrame, function(_dt, _camPos, ramp)
+		apply(ramp)
+	end)
+	table.insert(ctx.finalize, function()
+		apply(0)
 	end)
 end
 
--- A post-processing grade that fades in and back out.
+-- A post-processing grade that rolls in and back out with the storm.
 -- grade: { Tint, Saturation, Brightness, Contrast, Bloom, BloomThreshold, BloomSize, Rays, RaysSpread, Blur }
 function Common.grade(ctx: Ctx, grade: { [string]: any })
-	local F = Common.FADE
 	local cc = Instance.new("ColorCorrectionEffect")
 	cc.Name = "StormGrade"
 	cc.Parent = Lighting
-	Common.tween(cc, F, {
-		TintColor = grade.Tint or Color3.new(1, 1, 1),
-		Saturation = grade.Saturation or 0,
-		Brightness = grade.Brightness or 0,
-		Contrast = grade.Contrast or 0,
-	})
 	local made: { Instance } = { cc }
+	local tint: Color3 = grade.Tint or Color3.new(1, 1, 1)
 	local bloom: BloomEffect? = nil
 	if grade.Bloom then
 		local b = Instance.new("BloomEffect")
@@ -197,7 +249,6 @@ function Common.grade(ctx: Ctx, grade: { [string]: any })
 		b.Size = grade.BloomSize or 30
 		b.Threshold = 2
 		b.Parent = Lighting
-		Common.tween(b, F, { Intensity = grade.Bloom, Threshold = grade.BloomThreshold or 1 })
 		bloom = b
 		table.insert(made, b)
 	end
@@ -208,7 +259,6 @@ function Common.grade(ctx: Ctx, grade: { [string]: any })
 		r.Intensity = 0
 		r.Spread = grade.RaysSpread or 0.6
 		r.Parent = Lighting
-		Common.tween(r, F, { Intensity = grade.Rays })
 		rays = r
 		table.insert(made, r)
 	end
@@ -218,27 +268,98 @@ function Common.grade(ctx: Ctx, grade: { [string]: any })
 		b.Name = "StormBlur"
 		b.Size = 0
 		b.Parent = Lighting
-		Common.tween(b, F, { Size = grade.Blur })
 		blur = b
 		table.insert(made, b)
 	end
-	table.insert(ctx.cleanup, function()
-		Common.tween(cc, F, { TintColor = Color3.new(1, 1, 1), Saturation = 0, Brightness = 0, Contrast = 0 })
+	local function apply(k: number)
+		cc.TintColor = Color3.new(1, 1, 1):Lerp(tint, k)
+		cc.Saturation = (grade.Saturation or 0) * k
+		cc.Brightness = (grade.Brightness or 0) * k
+		cc.Contrast = (grade.Contrast or 0) * k
 		if bloom then
-			Common.tween(bloom, F, { Intensity = 0 })
+			bloom.Intensity = grade.Bloom * k
+			bloom.Threshold = 2 + ((grade.BloomThreshold or 1) - 2) * k
 		end
 		if rays then
-			Common.tween(rays, F, { Intensity = 0 })
+			rays.Intensity = grade.Rays * k
 		end
 		if blur then
-			Common.tween(blur, F, { Size = 0 })
+			blur.Size = grade.Blur * k
 		end
-		task.delay(F + 1, function()
-			for _, m in made do
-				m:Destroy()
-			end
-		end)
+	end
+	apply(0)
+	table.insert(ctx.onFrame, function(_dt, _camPos, ramp)
+		apply(ramp)
 	end)
+	table.insert(ctx.finalize, function()
+		for _, m in made do
+			m:Destroy()
+		end
+	end)
+end
+
+-- One glowing lightning segment from a to b: a soft white core and a coloured halo, drawn
+-- with camera-facing beams (round, no hard edges). Returns an invisible holder part; its
+-- Transparency and LocalTransparencyModifier drive the beams, so storm code can flicker and
+-- fade it like a normal part.
+function Common.boltSegment(ctx: Ctx, a: Vector3, b: Vector3, w: number, core: Color3, halo: Color3, haloAlpha: number?): BasePart
+	local dir = b - a
+	local len = dir.Magnitude
+	local holder = Instance.new("Part")
+	holder.Name = "Bolt"
+	holder.Anchored = true
+	holder.CanCollide = false
+	holder.CanQuery = false
+	holder.CanTouch = false
+	holder.CastShadow = false
+	holder.Size = Vector3.new(0.001, 0.001, 0.001)
+	holder.Material = Enum.Material.SmoothPlastic
+	holder.CFrame = CFrame.lookAt((a + b) / 2, b + Vector3.new(0, 0.001, 0))
+	-- overlap the joints a little so a jagged bolt reads as one line
+	local reach = len / 2 + w * 0.6
+	local a0 = Instance.new("Attachment")
+	a0.Position = Vector3.new(0, 0, reach)
+	a0.Parent = holder
+	local a1 = Instance.new("Attachment")
+	a1.Position = Vector3.new(0, 0, -reach)
+	a1.Parent = holder
+	local function beam(width: number, color: Color3, base: number, bright: number): Beam
+		local bm = Instance.new("Beam")
+		bm.Attachment0 = a0
+		bm.Attachment1 = a1
+		bm.FaceCamera = true
+		bm.Texture = Common.TEX.BoltBeam
+		bm.TextureMode = Enum.TextureMode.Stretch
+		bm.LightEmission = 1
+		bm.LightInfluence = 0
+		bm.Brightness = bright
+		bm.Color = ColorSequence.new(color)
+		bm.Width0 = width
+		bm.Width1 = width * 0.85
+		bm.Segments = 1
+		bm.Transparency = NumberSequence.new(base)
+		bm:SetAttribute("Base", base)
+		bm.Parent = holder
+		return bm
+	end
+	local beams = {
+		beam(w * 1.8, core, 0, 4),
+		beam(w * 7, halo, haloAlpha or 0.55, 2),
+	}
+	local function sync()
+		local v = 1 - (1 - holder.Transparency) * (1 - holder.LocalTransparencyModifier)
+		for _, bm in beams do
+			local base = bm:GetAttribute("Base") :: number
+			bm.Transparency = NumberSequence.new(base + (1 - base) * v)
+		end
+	end
+	holder:GetPropertyChangedSignal("Transparency"):Connect(sync)
+	holder:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(sync)
+	holder.Transparency = 0
+	holder.Parent = ctx.folder
+	sync()
+	Common.Flashed:Fire(b)
+	return holder
 end
 
 -- The lamp part in the lamp room, if streamed in
@@ -250,8 +371,16 @@ function Common.lamp(): BasePart?
 	return if lamp and lamp:IsA("BasePart") then lamp else nil
 end
 
--- Run a storm's build(ctx) and return a stop() that fades it out
-function Common.run(textures: { [string]: any }?, build: (Ctx) -> ()): () -> ()
+-- Run a storm's build(ctx). Returns stop(instant?) (fades it out and cleans up; instant tears
+-- it down this frame), setLevel(0..1) (how strong the look is: StormFXController uses a low
+-- level during the Warning) and getRaw() (the un-eased ramp, to hand over to a rebuild).
+-- startRaw lets a rebuilt storm pick up exactly where the previous one was.
+function Common.run(
+	textures: { [string]: any }?,
+	build: (Ctx) -> (),
+	level: number?,
+	startRaw: number?
+): ((boolean?) -> (), (number) -> (), () -> number)
 	local folder = Instance.new("Folder")
 	folder.Name = "StormFX"
 	folder.Parent = Workspace
@@ -261,33 +390,66 @@ function Common.run(textures: { [string]: any }?, build: (Ctx) -> ()): () -> ()
 			tex[k] = v
 		end
 	end
-	local ctx: Ctx = { folder = folder, textures = tex, ramp = 0, cleanup = {}, onFrame = {} }
+	local ctx: Ctx = {
+		folder = folder,
+		textures = tex,
+		ramp = 0,
+		gust = Vector3.zero,
+		time = 0,
+		cleanup = {},
+		finalize = {},
+		onFrame = {},
+	}
 	build(ctx)
 	local stopping = false
+	local target = level or 1
+	local raw = startRaw or 0
+	ctx.ramp = smooth(raw)
 	local conn = RunService.RenderStepped:Connect(function(dt)
 		local camera = Workspace.CurrentCamera
 		if not camera then
 			return
 		end
-		if stopping then
-			ctx.ramp = math.max(0, ctx.ramp - dt / Common.FADE)
-		else
-			ctx.ramp = math.min(1, ctx.ramp + dt / Common.FADE)
-		end
+		local goal = if stopping then 0 else target
+		-- glide toward the goal: the ramp eases in and out instead of starting and stopping hard
+		local step = dt / Common.FADE
+		raw = if raw < goal then math.min(goal, raw + step) else math.max(goal, raw - step)
+		ctx.ramp = smooth(raw)
+		ctx.time += dt
+		ctx.gust = Common.gustAt(os.clock())
 		local pos = camera.CFrame.Position
 		for _, f in ctx.onFrame do
 			f(dt, pos, ctx.ramp)
 		end
 	end)
-	return function()
+	local finished = false
+	local function finish()
+		if finished then
+			return
+		end
+		finished = true
+		conn:Disconnect()
+		for _, f in ctx.finalize do
+			pcall(f)
+		end
+		folder:Destroy()
+	end
+	local function stop(instant: boolean?)
 		stopping = true
 		for _, f in ctx.cleanup do
 			task.spawn(f)
 		end
-		task.delay(Common.FADE + 2, function()
-			conn:Disconnect()
-			folder:Destroy()
-		end)
+		if instant then
+			finish()
+		else
+			task.delay(Common.FADE * math.max(raw, 0.01) + 1, finish)
+		end
+	end
+	local function setLevel(v: number)
+		target = math.clamp(v, 0, 1)
+	end
+	return stop, setLevel, function()
+		return raw
 	end
 end
 

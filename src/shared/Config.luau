@@ -389,11 +389,11 @@ Config.PhaseLook = {
 	},
 }
 
-Config.LookTweenSeconds = {
-	Calm = 6,
-	Warning = 10,
-	Storm = 6,
-	Dawn = 4,
+Config.LookTweenSeconds = { -- long, eased changes so the sky rolls in and clears
+	Calm = 10,
+	Warning = 14,
+	Storm = 10,
+	Dawn = 9,
 	Won = 6,
 	Lost = 3,
 }

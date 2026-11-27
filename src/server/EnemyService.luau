@@ -275,13 +275,7 @@ local function removeEnemy(e: Enemy)
 		e.model:SetAttribute("AnimSpeed", 1)
 		e.model:SetAttribute("Anim", "Death")
 		e.humanoid.WalkSpeed = 0
-		task.delay(2.2, function()
-			for _, d in e.model:GetDescendants() do
-				if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
-					d.Transparency = 0.5
-				end
-			end
-		end)
+		-- clients dissolve it into fog (CreatureController), then it's removed
 		Debris:AddItem(e.model, 3)
 		return
 	end
