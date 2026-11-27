@@ -7,14 +7,19 @@ local Config = {}
 ---------------------------------------------------------------------------
 -- Storm cycle
 ---------------------------------------------------------------------------
--- Seconds per phase (design doc: calm ~3 min, warning 30 s, storm 2-3 min, dawn 20 s)
+-- Seconds per phase. A full run is tuned to about 2 hours:
+--   one night = Calm 165 + Warning 25 + Storm ~140 (120-160) + Dawn 18 = ~348 s (5.8 min)
+--   20 nights = ~116 min, + the Tide Caller holding storms 10 and 20 open (up to 240 s each)
+--   + the 34 s intro = about 2 hours from the shipwreck to the last dawn.
+-- If you change these or MaxStorms, keep that total in mind.
 Config.PhaseDurations = {
-	Calm = 180,
-	Warning = 30,
+	Calm = 165,
+	Warning = 25,
 	StormMin = 120,
-	StormMax = 180,
-	Dawn = 20,
+	StormMax = 160,
+	Dawn = 18,
 }
+Config.RunTargetMinutes = 120
 
 -- Debug: make every phase last DebugPhaseSeconds.
 -- Either set DebugFastCycle = true here, or (Studio only) tick the
