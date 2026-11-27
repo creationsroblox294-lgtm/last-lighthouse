@@ -23,7 +23,29 @@ local CombatService = {}
 local lastHarpoon: { [Player]: number } = {}
 local lastFlare: { [Player]: number } = {}
 
-local function makeTool(name: string, size: Vector3, color: Color3, material: Enum.Material, tip: Color3?): Tool
+local ServerStorage = game:GetService("ServerStorage")
+
+-- How each Blender mesh piece (named <Tool>_<Role>) looks in Roblox
+local LOOKS: { [string]: { material: Enum.Material, color: Color3 } } = {
+	Wood = { material = Enum.Material.Wood, color = Color3.fromRGB(124, 78, 46) },
+	Metal = { material = Enum.Material.Metal, color = Color3.fromRGB(118, 124, 132) },
+	Rope = { material = Enum.Material.Fabric, color = Color3.fromRGB(206, 178, 128) },
+	Leather = { material = Enum.Material.Fabric, color = Color3.fromRGB(78, 44, 26) },
+	Plastic = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(240, 96, 24) },
+	Grip = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(42, 42, 46) },
+	Dark = { material = Enum.Material.Metal, color = Color3.fromRGB(34, 34, 38) },
+}
+
+-- Per tool: model scale, and where the hand holds it (in model space, before scaling)
+-- roll: turn about the tool's long axis (the hammer head stands upright, face down)
+local HOLD: { [string]: { scale: number, grip: Vector3, roll: number } } = {
+	Harpoon = { scale = 0.8, grip = Vector3.new(0, 0, 0), roll = 0 },
+	Hammer = { scale = 1.15, grip = Vector3.new(0, 0, -0.45), roll = 90 },
+	Flare = { scale = 1.4, grip = Vector3.new(0, 0.12, 0), roll = 0 },
+}
+
+-- Fallback greybox tool (used only if the Blender model is missing)
+local function blockTool(name: string, size: Vector3, color: Color3, material: Enum.Material, tip: Color3?): Tool
 	local tool = Instance.new("Tool")
 	tool.Name = name
 	tool.CanBeDropped = false
@@ -53,6 +75,64 @@ local function makeTool(name: string, size: Vector3, color: Color3, material: En
 	end
 	tool.Grip = CFrame.new(0, 0, size.Z * 0.3)
 	return tool
+end
+
+-- Tool built from the Blender model in ServerStorage.ToolModels.<name>
+-- (MeshParts named <name>_<Role>, modelled with the tip along +Z and the grip at the origin)
+local function modelTool(name: string): Tool?
+	local folder = ServerStorage:FindFirstChild("ToolModels")
+	local source = folder and folder:FindFirstChild(name)
+	if not source then
+		return nil
+	end
+	local hold = HOLD[name] or { scale = 1, grip = Vector3.zero, roll = 0 }
+	local tool = Instance.new("Tool")
+	tool.Name = name
+	tool.CanBeDropped = false
+	tool.RequiresHandle = true
+	local handle = Instance.new("Part")
+	handle.Name = "Handle"
+	handle.Size = Vector3.new(0.3, 0.3, 0.3)
+	handle.Transparency = 1
+	handle.CanCollide = false
+	handle.CanQuery = false
+	handle.CanTouch = false
+	handle.Massless = true
+	handle.CFrame = CFrame.new()
+	handle.Parent = tool
+	-- model space -> handle space: flip so the tip points along -Z (a tool's forward)
+	local flip = CFrame.Angles(0, math.pi, 0) * CFrame.Angles(0, 0, math.rad(hold.roll))
+	for _, piece in source:GetDescendants() do
+		if not piece:IsA("MeshPart") then
+			continue
+		end
+		local part = piece:Clone()
+		local role = string.match(part.Name, "_(%w+)$") or ""
+		local look = LOOKS[role]
+		if look then
+			part.Material = look.material
+			part.Color = look.color
+		end
+		part.Size *= hold.scale
+		part.Anchored = false
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.Massless = true
+		part.CastShadow = true
+		part.CFrame = flip * CFrame.new((piece.Position - hold.grip) * hold.scale)
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = handle
+		weld.Part1 = part
+		weld.Parent = part
+		part.Parent = tool
+	end
+	tool.Grip = CFrame.new()
+	return tool
+end
+
+local function makeTool(name: string, size: Vector3, color: Color3, material: Enum.Material, tip: Color3?): Tool
+	return modelTool(name) or blockTool(name, size, color, material, tip)
 end
 
 local function rootOf(player: Player): BasePart?

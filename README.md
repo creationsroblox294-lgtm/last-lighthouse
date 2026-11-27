@@ -301,3 +301,21 @@ Everything you gather goes into a backpack you wear (a leather pack model on you
 - Icons (ForgeGUI, batch 3) are in `assets/ui3`.
 
 Testing note: Studio's execute_luau runs in its own script VM, so `require(ResourceService)` there gets a separate copy. Test through real gameplay (fire the `Punch` remote, trigger prompts from the client) instead.
+
+## Tool models (Blender)
+
+The Harpoon, Hammer and Flare gun are modelled in Blender
+(`~/the-last-lighthouse-assets/tools3d/LastLighthouse_Tools.blend`, FBX exports in `assets/tools3d`).
+Each tool is a few MeshParts named `<Tool>_<Role>`, modelled with the tip along +Z and the hand grip at the origin.
+They live in `ServerStorage.ToolModels.<Tool>`, and `CombatService` builds the tools from them:
+
+- `LOOKS` gives each role its Roblox material and colour: Wood, Metal, Rope and Leather (Fabric), Plastic, Grip, Dark.
+- `HOLD` sets each tool's scale, grip point and roll. The hammer head is turned upright, face down.
+- If a model is missing, the old block tool is used instead.
+- The client preloads the meshes on spawn so nothing pops in on the first equip.
+
+| Tool | Model asset |
+|---|---|
+| Harpoon (ash shaft, rope grips, barbed leaf head) | 116672645311335 |
+| Hammer (claw hammer, leather-wrapped grip) | 138355564212074 |
+| Flare gun (orange flare pistol) | 113042351024430 |

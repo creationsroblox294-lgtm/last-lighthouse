@@ -32,3 +32,21 @@ StormFXController.Start()
 StormReactionController.Start()
 BackpackController.Start()
 task.spawn(IntroController.Start)
+
+-- Preload the tool meshes (Harpoon, Hammer, Flare) so they don't pop in on first equip
+task.spawn(function()
+	local player = game:GetService("Players").LocalPlayer
+	local backpack = player:WaitForChild("Backpack")
+	task.wait(2)
+	local parts = {}
+	for _, tool in backpack:GetChildren() do
+		for _, part in tool:GetChildren() do
+			if part:IsA("MeshPart") then
+				table.insert(parts, part)
+			end
+		end
+	end
+	if #parts > 0 then
+		game:GetService("ContentProvider"):PreloadAsync(parts)
+	end
+end)
