@@ -678,7 +678,32 @@ add({
 		Sheet = "rbxassetid://94100520771589",
 	},
 })
-planned("BlackoutStorm", "Blackout Storm", "Severe", "Static is crackling in the air.", "Blackout! Lightning hit the lamp!")
+add({
+	Id = "BlackoutStorm",
+	Name = "Blackout Storm",
+	Tier = "Severe",
+	Built = true,
+	Forecast = "Static is crackling in the air.",
+	Blurb = "Blackout! Lightning keeps going for the lamp. Climb up and relight it, and keep away from the ball lightning.",
+	Color = Color3.fromRGB(160, 130, 255),
+	DrainMultiplier = 3.3,
+	EnemyMultiplier = 1,
+	-- a dry violet night full of static (Storms/BlackoutStorm strikes the lamp and sends the ball lightning; StormFX/BlackoutStorm draws it)
+	Look = {
+		ClockTime = 23,
+		Brightness = 1.6,
+		Exposure = 0.2,
+		Ambient = Color3.fromRGB(90, 75, 130),
+		FogDensity = 0.2,
+		FogHaze = 1,
+		FogColor = Color3.fromRGB(60, 45, 95),
+	},
+	Textures = {
+		Plasma = "rbxassetid://129625341065594",
+		Spark = "rbxassetid://124288772478718",
+		Glow = "rbxassetid://133210713162638",
+	},
+})
 planned("EmberStorm", "Ember Storm", "Severe", "Dry lightning and hot wind.", "Ember Storm! Fires are spreading.")
 planned("Whiteout", "Whiteout", "Severe", "Snow clouds, out of season.", "Whiteout! Get inside.")
 

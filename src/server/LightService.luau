@@ -25,6 +25,7 @@ local state: Configuration
 local fuel: number = L.StartFuel
 local lensTier = 1
 local radius = 0
+local radiusScale = 1 -- storms can choke the light (Blackout Storm)
 local beamAngle = 90 -- degrees around Y; direction = (cos, 0, sin)
 local controller: Player? = nil
 local aimTarget: number? = nil
@@ -100,7 +101,7 @@ local function updateRadius()
 	end
 	local base = L.LensRadius[lensTier] or L.LensRadius[1]
 	local frac = fuel / L.MaxFuel
-	radius = base * (L.MinRadiusFraction + (1 - L.MinRadiusFraction) * frac)
+	radius = base * (L.MinRadiusFraction + (1 - L.MinRadiusFraction) * frac) * radiusScale
 end
 
 local function updateLamp()
@@ -173,6 +174,14 @@ end
 function LightService.SetLensTier(tier: number)
 	lensTier = math.clamp(tier, 1, #L.LensRadius)
 	updateRadius()
+	publish()
+end
+
+-- Shrink (or restore) the safe circle without touching the fuel: 1 = normal
+function LightService.SetRadiusScale(scale: number)
+	radiusScale = math.clamp(scale, 0, 1)
+	updateRadius()
+	updateLamp()
 	publish()
 end
 

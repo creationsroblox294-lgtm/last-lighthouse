@@ -114,8 +114,10 @@ function LightController.Start()
 
 	RunService.RenderStepped:Connect(function(dt)
 		local lit = state:GetAttribute("IsLit") == true
-		beam.Transparency = if lit then 0.75 else 1
-		spot.Enabled = lit
+		-- Blackout Storm: lightning has choked the lamp, and the beam only coughs now and then
+		local choked = Workspace:GetAttribute("Blackout") == true
+		beam.Transparency = if not lit then 1 elseif choked then (if math.random() < 0.06 then 0.85 else 1) else 0.75
+		spot.Enabled = lit and not choked
 		if not lit then
 			return
 		end
