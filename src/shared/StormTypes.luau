@@ -732,7 +732,34 @@ add({
 		Vignette = "rbxassetid://134594259515631",
 	},
 })
-planned("Whiteout", "Whiteout", "Severe", "Snow clouds, out of season.", "Whiteout! Get inside.")
+add({
+	Id = "Whiteout",
+	Name = "Whiteout",
+	Tier = "Severe",
+	Built = true,
+	Forecast = "Snow clouds, out of season.",
+	Blurb = "Whiteout! Get inside: the cold will kill you out there. And when the snow closes in, watch for tracks.",
+	Color = Color3.fromRGB(225, 235, 250),
+	DrainMultiplier = 3.4,
+	EnemyMultiplier = 0.7,
+	-- a blizzard (Storms/Whiteout freezes the players and sends the tracks; StormFX/Whiteout draws it)
+	Look = {
+		ClockTime = 14.5,
+		Brightness = 2.2,
+		Exposure = 0.15,
+		Ambient = Color3.fromRGB(170, 180, 195),
+		FogDensity = 0.55,
+		FogHaze = 2.6,
+		FogColor = Color3.fromRGB(225, 230, 238),
+	},
+	Textures = {
+		Flake = "rbxassetid://74237450742445",
+		Print = "rbxassetid://109715963528831",
+		Frost = "rbxassetid://75634646301252",
+		Smoke = "rbxassetid://79085558579719",
+		Haze = "rbxassetid://97891709522639",
+	},
+})
 
 ----------------------------------------------------------------- Catastrophic
 planned("Maelstrom", "Maelstrom", "Catastrophic", "The sea is turning in circles.", "MAELSTROM!")
