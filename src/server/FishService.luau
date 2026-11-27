@@ -129,11 +129,12 @@ local function spawnFish(school: School): Fish?
 		if f.caught then
 			return
 		end
-		if ResourceService.GetCarried(player) then
-			Remotes.notify(player, "Your hands are full.", nil)
+		if ResourceService.IsFull(player) then
+			Remotes.notify(player, "Your backpack is full. Empty it at the storage chest.", nil)
 			return
 		end
-		if ResourceService.Give(player, "RawFish") then
+		local here = m.PrimaryPart or v
+		if ResourceService.Give(player, "RawFish", if here and here:IsA("BasePart") then here.Position else nil) then
 			f.caught = true
 			prompt.Enabled = false
 			m:SetAttribute("Anim", "Flop")

@@ -250,7 +250,9 @@ Config.Resources = {
 	FishCooldownSeconds = 15,
 	FishHeal = 35,
 	CookSeconds = 1.5, -- hold time at the fireplace
-	CarryWalkSpeed = 12,
+	BackpackSize = 20, -- items you can carry at once
+	TakeFuel = 5, -- fuel items "Take fuel" hands out per use
+	CarryWalkSpeed = 12, -- walk speed with a full backpack (slows down as it fills)
 	WalkSpeed = 16,
 }
 
@@ -431,7 +433,10 @@ Config.UI = {
 		Wood = "rbxassetid://91980494978443",
 		Scrap = "rbxassetid://119798328808768",
 		Oil = "rbxassetid://135453853959089",
-		Fish = "rbxassetid://94309066936797",
+		Fish = "rbxassetid://118894650245855", -- cooked (what storage holds)
+		RawFish = "rbxassetid://123642110513542",
+		CookedFish = "rbxassetid://118894650245855",
+		Backpack = "rbxassetid://89951699771553",
 		WhaleOil = "rbxassetid://82152139673138",
 		LampFlame = "rbxassetid://105301563620009",
 	},

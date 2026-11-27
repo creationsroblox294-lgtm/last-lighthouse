@@ -446,15 +446,12 @@ function HUDController.Start()
 	refreshBoss()
 
 	local function refreshCarry()
-		local kind = player:GetAttribute("Carrying")
-		local carrying = typeof(kind) == "string"
-		carryLabel.Text = if carrying then `Carrying {ITEM_NAME[kind :: string] or kind}` else ""
-		local pic = if carrying then UI.Items[kind :: string] else nil
-		carryIcon.Visible = pic ~= nil
-		if pic then
-			carryIcon.Image = pic
-		end
-		dropButton.Visible = carrying
+		-- everything you gather goes into the backpack now (BackpackController), so the old
+		-- "Carrying ..." line and Drop button stay hidden
+		local _ = ITEM_NAME
+		carryLabel.Text = ""
+		carryIcon.Visible = false
+		dropButton.Visible = false
 	end
 	player:GetAttributeChangedSignal("Carrying"):Connect(refreshCarry)
 	refreshCarry()

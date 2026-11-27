@@ -1,12 +1,16 @@
 --!strict
 -- ResourceService: physical items, carrying, the shared storage, gathering and wreckage.
 --
--- Items are real objects you carry one at a time (design doc: moving fuel up the tower is
--- real work). Stations in and around the tower:
---   StorageCrateA  "Store item"     -> adds what you carry to the shared storage
---   StorageCrateB  "Take fuel"      -> takes oil (or wood) out of storage to carry
---   FuelTank       "Pour fuel"      -> carried oil / wood / whale oil goes into the lamp
+-- Everything you gather goes into your backpack (Config.Resources.BackpackSize items; the
+-- fuller it is, the slower you walk, so hauling is still real work). Stations:
+--   StorageCrateA  "Empty backpack" -> wood, scrap, oil and cooked fish go into shared storage
+--   StorageCrateB  "Take fuel"      -> oil (or wood) from storage into your backpack
+--   FuelTank       "Pour fuel"      -> whale oil, oil (or wood) from your backpack into the lamp
+--   Fireplace      "Cook fish"      -> every raw fish in your backpack gets cooked
 --   FoodStorage    "Eat fish"       -> heals you
+-- Players see what's in their backpack through player attributes "Pack_<Kind>" and
+-- "PackTotal"; "Carrying" is the kind they picked up last (nil when the backpack is empty).
+-- Every item gained fires "Gained" (kind, amount, fromPosition) for the pop-up animation.
 -- Gathering: chop pines, catch fish at the tide pools (and the dock from storm 5),
 -- pick up wreckage that washes up on Wreck Beach after every storm.
 
@@ -25,11 +29,11 @@ local Movement = require(script.Parent:WaitForChild("Movement"))
 local R = Config.Resources
 local ResourceService = {}
 
-type Carry = { kind: string, item: BasePart }
-
 local storageState: Configuration
 local storage: { [string]: number } = {}
-local carrying: { [Player]: Carry } = {}
+local packs: { [Player]: { [string]: number } } = {}
+local lastKind: { [Player]: string } = {}
+local PACK_KINDS = { "Wood", "Scrap", "Oil", "Fish", "RawFish", "WhaleOil" }
 local lastDrop: { [Player]: number } = {}
 local itemsFolder: Folder
 local rng = Random.new()
@@ -77,9 +81,48 @@ function ResourceService.SpendAny(kinds: { string }, amount: number): string?
 	return nil
 end
 
+local function packOf(player: Player): { [string]: number }
+	local pack = packs[player]
+	if not pack then
+		pack = {}
+		packs[player] = pack
+	end
+	return pack
+end
+
+local function packTotal(player: Player): number
+	local n = 0
+	for _, count in packOf(player) do
+		n += count
+	end
+	return n
+end
+
+-- The kind the player picked up last, or any kind they have (nil when the backpack is empty)
 function ResourceService.GetCarried(player: Player): string?
-	local carry = carrying[player]
-	return if carry then carry.kind else nil
+	local pack = packOf(player)
+	local last = lastKind[player]
+	if last and (pack[last] or 0) > 0 then
+		return last
+	end
+	for _, kind in PACK_KINDS do
+		if (pack[kind] or 0) > 0 then
+			return kind
+		end
+	end
+	return nil
+end
+
+function ResourceService.Has(player: Player, kind: string): boolean
+	return (packOf(player)[kind] or 0) > 0
+end
+
+function ResourceService.Count(player: Player, kind: string): number
+	return packOf(player)[kind] or 0
+end
+
+function ResourceService.IsFull(player: Player): boolean
+	return packTotal(player) >= R.BackpackSize
 end
 
 local function humanoidOf(player: Player): Humanoid?
@@ -138,65 +181,82 @@ function ResourceService.SpawnItem(kind: string, pos: Vector3): BasePart?
 	return makeItem(kind, cf)
 end
 
-local function setCarrySpeed(player: Player, carryingSomething: boolean)
+-- the fuller the backpack, the slower you walk
+local function updatePack(player: Player)
+	local pack = packOf(player)
+	local total = 0
+	for _, kind in PACK_KINDS do
+		local n = pack[kind] or 0
+		total += n
+		player:SetAttribute("Pack_" .. kind, if n > 0 then n else nil)
+	end
+	player:SetAttribute("PackTotal", total)
+	player:SetAttribute("PackSize", R.BackpackSize)
+	player:SetAttribute("Carrying", ResourceService.GetCarried(player))
 	local humanoid = humanoidOf(player)
 	if humanoid then
-		Movement.SetBase(humanoid, if carryingSomething then R.CarryWalkSpeed else R.WalkSpeed)
+		local load = math.clamp(total / R.BackpackSize, 0, 1)
+		Movement.SetBase(humanoid, R.WalkSpeed - (R.WalkSpeed - R.CarryWalkSpeed) * load)
 	end
 end
 
-local function attach(player: Player, part: BasePart): boolean
-	local root = rootOf(player)
-	local humanoid = humanoidOf(player)
-	if not root or not humanoid or humanoid.Health <= 0 then
+local function fullMessage(player: Player)
+	Remotes.notify(player, `Your backpack is full ({R.BackpackSize}). Empty it at the storage chest.`, nil)
+end
+
+-- Put items in the backpack. from: where they came from (for the pop-up animation).
+local function add(player: Player, kind: string, amount: number, from: Vector3?): boolean
+	if packTotal(player) + amount > R.BackpackSize then
+		fullMessage(player)
 		return false
 	end
-	local prompt = part:FindFirstChild("PickUp")
-	if prompt and prompt:IsA("ProximityPrompt") then
-		prompt.Enabled = false
-	end
-	part.Anchored = false
-	part.CanCollide = false
-	part.Massless = true
-	part.CFrame = root.CFrame * CFrame.new(0, 0.6, -1.8)
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = root
-	weld.Part1 = part
-	weld.Parent = part
-	part.Parent = player.Character
-	carrying[player] = { kind = part:GetAttribute("ItemKind") :: string, item = part }
-	player:SetAttribute("Carrying", carrying[player].kind)
-	setCarrySpeed(player, true)
+	local pack = packOf(player)
+	pack[kind] = (pack[kind] or 0) + amount
+	lastKind[player] = kind
+	updatePack(player)
+	local root = rootOf(player)
+	Remotes.event("Gained"):FireClient(player, kind, amount, from or (if root then root.Position else nil))
 	return true
+end
+
+-- Take items out of the backpack; returns how many were taken
+local function take(player: Player, kind: string, amount: number): number
+	local pack = packOf(player)
+	local n = math.min(pack[kind] or 0, amount)
+	if n > 0 then
+		pack[kind] -= n
+		if pack[kind] <= 0 then
+			pack[kind] = nil
+		end
+		updatePack(player)
+	end
+	return n
 end
 
 pickUp = function(player: Player, part: BasePart)
-	if carrying[player] then
-		Remotes.notify(player, "Your hands are full. Drop or use what you're carrying first.", nil)
-		return
-	end
 	if part.Parent ~= itemsFolder then
 		return
 	end
-	attach(player, part)
+	local humanoid = humanoidOf(player)
+	if not humanoid or humanoid.Health <= 0 then
+		return
+	end
+	local kind = part:GetAttribute("ItemKind")
+	if typeof(kind) ~= "string" then
+		return
+	end
+	if add(player, kind, 1, part.Position) then
+		part:Destroy()
+	end
 end
 
--- Give the player a fresh item to carry (from a tree, pool or storage)
-local function give(player: Player, kind: string): boolean
-	if carrying[player] then
-		Remotes.notify(player, "Your hands are full. Drop or use what you're carrying first.", nil)
+-- Give the player a fresh item (from a tree, pool or storage)
+local function give(player: Player, kind: string, from: Vector3?): boolean
+	local humanoid = humanoidOf(player)
+	if not humanoid or humanoid.Health <= 0 then
 		return false
 	end
-	local root = rootOf(player)
-	if not root then
-		return false
-	end
-	local part = makeItem(kind, root.CFrame)
-	if not attach(player, part) then
-		part:Destroy()
-		return false
-	end
-	return true
+	return add(player, kind, 1, from)
 end
 
 -- defined further down (tree felling uses it before its definition)
@@ -213,12 +273,14 @@ function ResourceService.HitTree(player: Player, tree: Model): string?
 		tree:SetAttribute("Hits", hits)
 		return "hit"
 	end
-	if carrying[player] then
-		Remotes.notify(player, "Your hands are full. Drop or use what you're carrying first.", nil)
+	if ResourceService.IsFull(player) then
+		fullMessage(player)
 		tree:SetAttribute("Hits", R.PunchesPerTree - 1)
 		return "full"
 	end
-	if not give(player, "Wood") then
+	local trunk = tree:FindFirstChild("Trunk")
+	local from = if trunk and trunk:IsA("BasePart") then trunk.Position + Vector3.new(0, 2, 0) else nil
+	if not give(player, "Wood", from) then
 		return nil
 	end
 	tree:SetAttribute("Hits", 0)
@@ -251,33 +313,38 @@ function ResourceService.FellTree(tree: Model): boolean
 	return true
 end
 
--- Public: hand a fresh item to the player (FishService uses this)
-function ResourceService.Give(player: Player, kind: string): boolean
-	return give(player, kind)
+-- Public: put a fresh item in the player's backpack (FishService uses this)
+function ResourceService.Give(player: Player, kind: string, from: Vector3?): boolean
+	return give(player, kind, from)
 end
 
--- Remove the carried item and return its kind
-local function consume(player: Player): string?
-	local carry = carrying[player]
-	if not carry then
-		return nil
-	end
-	carrying[player] = nil
-	player:SetAttribute("Carrying", nil)
-	carry.item:Destroy()
-	setCarrySpeed(player, false)
-	return carry.kind
-end
-
-function ResourceService.DropCarried(player: Player, at: Vector3?)
-	local carry = carrying[player]
-	if not carry then
+-- Drop one item (of `kind`, or the last kind picked up) on the ground
+function ResourceService.DropCarried(player: Player, at: Vector3?, kind: string?)
+	local which = kind or ResourceService.GetCarried(player)
+	if not which or take(player, which, 1) == 0 then
 		return
 	end
 	local root = rootOf(player)
-	local pos = at or if root then (root.CFrame * CFrame.new(0, 0, -3)).Position else carry.item.Position
-	consume(player)
-	ResourceService.SpawnItem(carry.kind, pos)
+	local pos = at or if root then (root.CFrame * CFrame.new(0, 0, -3)).Position else nil
+	if pos then
+		ResourceService.SpawnItem(which, pos)
+	end
+end
+
+-- Drop everything (on death), spread around where the player fell
+local function dropAll(player: Player)
+	local root = rootOf(player)
+	local center = if root then root.Position else nil
+	for _, kind in PACK_KINDS do
+		local n = take(player, kind, math.huge)
+		if center then
+			for _ = 1, n do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local r = rng:NextNumber(1.5, 5)
+				ResourceService.SpawnItem(kind, center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r))
+			end
+		end
+	end
 end
 
 local function addPrompt(parent: Instance, action: string, object: string, hold: number, onTrigger: (Player) -> ()): ProximityPrompt
@@ -292,6 +359,51 @@ local function addPrompt(parent: Instance, action: string, object: string, hold:
 	return prompt
 end
 
+-- A leather backpack (with a rolled blanket on top) strapped to the character's back
+local function wearBackpack(character: Model)
+	local torso = character:WaitForChild("UpperTorso", 5) or character:FindFirstChild("Torso")
+	if not torso or not torso:IsA("BasePart") or character:FindFirstChild("PackModel") then
+		return
+	end
+	local model = Instance.new("Model")
+	model.Name = "PackModel"
+	local back = torso.CFrame * CFrame.new(0, 0.05, torso.Size.Z / 2 + 0.5)
+	local function piece(name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size
+		p.Color = color
+		p.Material = material
+		if shape then
+			p.Shape = shape
+		end
+		p.CFrame = back * offset
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Massless = true
+		p.CastShadow = false
+		p.Anchored = false
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = torso :: BasePart
+		w.Part1 = p
+		w.Parent = p
+		p.Parent = model
+		return p
+	end
+	local leather = Color3.fromRGB(120, 72, 40)
+	local brass = Color3.fromRGB(205, 160, 70)
+	piece("Body", Vector3.new(1.5, 1.7, 0.85), CFrame.new(), leather, Enum.Material.Leather)
+	piece("Flap", Vector3.new(1.54, 0.6, 0.9), CFrame.new(0, 0.6, 0.02), Color3.fromRGB(100, 58, 32), Enum.Material.Leather)
+	piece("Pocket", Vector3.new(1, 0.6, 0.25), CFrame.new(0, -0.35, 0.5), Color3.fromRGB(105, 62, 34), Enum.Material.Leather)
+	piece("BuckleL", Vector3.new(0.18, 0.2, 0.08), CFrame.new(-0.4, 0.38, 0.48), brass, Enum.Material.Metal)
+	piece("BuckleR", Vector3.new(0.18, 0.2, 0.08), CFrame.new(0.4, 0.38, 0.48), brass, Enum.Material.Metal)
+	piece("Blanket", Vector3.new(1.7, 0.5, 0.5), CFrame.new(0, 1.05, -0.05), Color3.fromRGB(34, 48, 86), Enum.Material.Fabric, Enum.PartType.Cylinder)
+	piece("StrapL", Vector3.new(0.14, 1.9, 0.06), CFrame.new(-0.45, 0.1, -0.46), Color3.fromRGB(70, 42, 24), Enum.Material.Leather)
+	piece("StrapR", Vector3.new(0.14, 1.9, 0.06), CFrame.new(0.45, 0.1, -0.46), Color3.fromRGB(70, 42, 24), Enum.Material.Leather)
+	model.Parent = character
+end
+
 local function setupStations(map: Instance)
 	local lighthouse = map:FindFirstChild("Lighthouse")
 	if not lighthouse then
@@ -304,40 +416,58 @@ local function setupStations(map: Instance)
 
 	local crateA = ground and ground:FindFirstChild("StorageCrateA")
 	if crateA then
-		addPrompt(crateA, "Store item", "Storage", 0, function(player)
-			local kind = ResourceService.GetCarried(player)
-			if not kind then
-				Remotes.notify(player, "Bring wood, scrap, oil or fish here to store it.", nil)
-				return
+		addPrompt(crateA, "Empty backpack", "Storage", 0, function(player)
+			local stored = {}
+			for _, kind in R.Kinds do
+				local n = take(player, kind, math.huge)
+				if n > 0 then
+					ResourceService.AddStorage(kind, n)
+					table.insert(stored, `{n} {string.lower(kind)}`)
+				end
 			end
-			if kind == "WhaleOil" then
-				Remotes.notify(player, "Whale oil can't be stored. Pour it into the lamp!", nil)
-				return
+			local left = {}
+			if ResourceService.Has(player, "RawFish") then
+				table.insert(left, "cook the raw fish at the fireplace first")
 			end
-			if kind == "RawFish" then
-				Remotes.notify(player, "Cook it at the fireplace first, then store it.", nil)
-				return
+			if ResourceService.Has(player, "WhaleOil") then
+				table.insert(left, "whale oil goes straight into the lamp")
 			end
-			consume(player)
-			ResourceService.AddStorage(kind, 1)
-			Remotes.notify(player, `Stored 1 {kind}.`, "Good")
+			if #stored > 0 then
+				Remotes.notify(player, `Stored {table.concat(stored, ", ")}.`, "Good")
+			elseif #left == 0 then
+				Remotes.notify(player, "Your backpack is empty. Gather wood, scrap, oil or fish.", nil)
+			end
+			if #left > 0 then
+				Remotes.notify(player, `Kept in your backpack: {table.concat(left, "; ")}.`, nil)
+			end
 		end)
 	end
 
 	local crateB = ground and ground:FindFirstChild("StorageCrateB")
 	if crateB then
 		addPrompt(crateB, "Take fuel", "Storage", 0, function(player)
-			if carrying[player] then
-				Remotes.notify(player, "Your hands are full.", nil)
+			-- up to R.TakeFuel at a time: oil first, then wood
+			local room = R.BackpackSize - packTotal(player)
+			if room <= 0 then
+				fullMessage(player)
 				return
 			end
-			if ResourceService.Spend("Oil", 1) then
-				give(player, "Oil")
-			elseif ResourceService.Spend("Wood", 1) then
-				give(player, "Wood")
-				Remotes.notify(player, "No oil left, so you took wood. It burns fast.", nil)
-			else
+			local want = math.min(R.TakeFuel, room)
+			local oil = math.min(want, storage.Oil or 0)
+			local wood = math.min(want - oil, storage.Wood or 0)
+			if oil + wood == 0 then
 				Remotes.notify(player, "Storage has no oil or wood!", "Alarm")
+				return
+			end
+			local from = if crateB:IsA("BasePart") then crateB.Position else nil
+			if oil > 0 and ResourceService.Spend("Oil", oil) then
+				add(player, "Oil", oil, from)
+			end
+			if wood > 0 and ResourceService.Spend("Wood", wood) then
+				add(player, "Wood", wood, from)
+				if oil == 0 then
+					Remotes.notify(player, "No oil left, so you took wood. It burns fast.", nil)
+				end
 			end
 		end)
 	end
@@ -345,15 +475,27 @@ local function setupStations(map: Instance)
 	local tank = lampRoom and lampRoom:FindFirstChild("FuelTank")
 	if tank then
 		addPrompt(tank, "Pour fuel", "Lamp fuel tank", 0.5, function(player)
-			local kind = ResourceService.GetCarried(player)
-			local value = if kind then (Config.Light.FuelValues :: any)[kind] else nil
-			if not value then
-				Remotes.notify(player, "Carry oil or wood up here to refuel the lamp.", nil)
+			-- pour the best fuel first until the tank is full; wood only if there's no oil
+			local values = Config.Light.FuelValues :: any
+			local room = Config.Light.MaxFuel - LightService.GetFuel()
+			local poured = 0
+			local hasOil = ResourceService.Has(player, "WhaleOil") or ResourceService.Has(player, "Oil")
+			for _, kind in { "WhaleOil", "Oil", "Wood" } do
+				if kind == "Wood" and hasOil then
+					break
+				end
+				while room > 0 and ResourceService.Has(player, kind) do
+					take(player, kind, 1)
+					LightService.AddFuel(values[kind])
+					room -= values[kind]
+					poured += values[kind]
+				end
+			end
+			if poured == 0 then
+				Remotes.notify(player, if room <= 0 then "The tank is already full." else "Bring oil or wood up here in your backpack to refuel the lamp.", nil)
 				return
 			end
-			consume(player)
-			LightService.AddFuel(value)
-			Remotes.notify(player, `+{value} fuel`, "Good")
+			Remotes.notify(player, `+{poured} fuel`, "Good")
 		end)
 	end
 
@@ -363,7 +505,7 @@ local function setupStations(map: Instance)
 	if hearth then
 		local cooking: { [Player]: boolean } = {}
 		addPrompt(hearth, "Cook fish", "Fireplace", R.CookSeconds, function(player)
-			if ResourceService.GetCarried(player) ~= "RawFish" then
+			if not ResourceService.Has(player, "RawFish") then
 				Remotes.notify(player, "Catch a fish in the sea (or the tide pools), then cook it here.", nil)
 				return
 			end
@@ -371,14 +513,17 @@ local function setupStations(map: Instance)
 				return
 			end
 			cooking[player] = true
-			consume(player)
+			local n = take(player, "RawFish", math.huge)
 			Remotes.notify(player, "Sizzling...", nil)
 			task.delay(1.2, function()
 				cooking[player] = nil
-				if player.Parent and give(player, "Fish") then
-					Remotes.notify(player, "Cooked fish! Store it in the chest or eat it in the bunk room.", "Good")
-				else
-					ResourceService.SpawnItem("Fish", hearth.Position + Vector3.new(0, 0, 3))
+				if player.Parent then
+					local pack = packOf(player)
+					pack.Fish = (pack.Fish or 0) + n -- the raw fish's space is still free
+					lastKind[player] = "Fish"
+					updatePack(player)
+					Remotes.event("Gained"):FireClient(player, "Fish", n, hearth.Position)
+					Remotes.notify(player, `Cooked {n} fish! Store it in the chest or eat it in the bunk room.`, "Good")
 				end
 			end)
 		end)
@@ -391,12 +536,11 @@ local function setupStations(map: Instance)
 			if not humanoid or humanoid.Health <= 0 then
 				return
 			end
-			if ResourceService.GetCarried(player) == "RawFish" then
+			if ResourceService.Has(player, "Fish") then
+				take(player, "Fish", 1)
+			elseif ResourceService.Has(player, "RawFish") and (storage.Fish or 0) <= 0 then
 				Remotes.notify(player, "Raw fish will make you sick. Cook it at the fireplace downstairs!", nil)
 				return
-			end
-			if ResourceService.GetCarried(player) == "Fish" then
-				consume(player)
 			elseif not ResourceService.Spend("Fish", 1) then
 				Remotes.notify(player, "No cooked fish! Catch one in the sea and cook it at the fireplace.", nil)
 				return
@@ -438,7 +582,7 @@ local function setupGathering(map: Instance)
 	local function fishingSpot(part: BasePart, label: string): ProximityPrompt
 		local prompt: ProximityPrompt
 		prompt = addPrompt(part, "Catch fish", label, 2, function(player)
-			if give(player, "RawFish") then
+			if give(player, "RawFish", part.Position) then
 				prompt.Enabled = false
 				task.delay(R.FishCooldownSeconds, function()
 					prompt.Enabled = true
@@ -498,8 +642,9 @@ local function spawnWreckage()
 end
 
 function ResourceService.Reset()
-	for player in carrying do
-		consume(player)
+	for player in packs do
+		table.clear(packs[player])
+		updatePack(player)
 	end
 	itemsFolder:ClearAllChildren()
 	table.clear(storage)
@@ -524,22 +669,23 @@ function ResourceService.Start()
 	setupStations(map)
 	setupGathering(map)
 
-	Remotes.event("DropItem").OnServerEvent:Connect(function(player: Player)
+	Remotes.event("DropItem").OnServerEvent:Connect(function(player: Player, kind: any)
 		local t = os.clock()
-		if t - (lastDrop[player] or 0) < 0.3 then
+		if t - (lastDrop[player] or 0) < 0.2 then
 			return
 		end
 		lastDrop[player] = t
-		ResourceService.DropCarried(player)
+		-- the client may name which kind to drop; anything else drops the last kind picked up
+		local which = if typeof(kind) == "string" and table.find(PACK_KINDS, kind) then kind else nil
+		ResourceService.DropCarried(player, nil, which)
 	end)
 
 	local function onCharacter(player: Player, character: Model)
-		carrying[player] = nil
-		player:SetAttribute("Carrying", nil)
 		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-		Movement.SetBase(humanoid, R.WalkSpeed)
+		updatePack(player) -- the backpack (now empty after a death) and walk speed
+		task.spawn(wearBackpack, character)
 		humanoid.Died:Connect(function()
-			ResourceService.DropCarried(player)
+			dropAll(player)
 		end)
 	end
 	local function onPlayer(player: Player)
@@ -555,8 +701,9 @@ function ResourceService.Start()
 		onPlayer(player)
 	end
 	Players.PlayerRemoving:Connect(function(player)
-		ResourceService.DropCarried(player)
-		carrying[player] = nil
+		dropAll(player)
+		packs[player] = nil
+		lastKind[player] = nil
 		lastDrop[player] = nil
 	end)
 

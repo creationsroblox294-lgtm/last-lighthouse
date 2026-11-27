@@ -284,3 +284,20 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
 - Used for: storage icons + counts, the carried item's icon, skinned HUD and intro buttons
   (`UISkin.button`), message toasts and the alarm banner on banners (`UISkin.banner`), the
   storm's severity badge on the storm panel, and the emblem on the won / lost screens.
+
+## Backpack
+
+Everything you gather goes into a backpack you wear (a leather pack model on your back).
+
+- Holds 20 items (`Config.Resources.BackpackSize`). The fuller it is, the slower you walk (down to `CarryWalkSpeed` when full).
+- Every item you get pops out as a tiny 3D piece, arcs onto your back, and a "+1" with the item's icon pops up by the backpack button.
+- **B** (or ButtonY) opens the backpack window: a fullness bar and one cell per item. Click a cell to drop one.
+- **Storage chest A: "Empty backpack"** stores all wood, scrap, oil and fish in one go. Raw fish (cook it first) and whale oil (straight into the lamp) stay in the pack.
+- **Storage chest B: "Take fuel"** takes up to 5 (`TakeFuel`) at a time: oil first, then wood.
+- **Lamp: "Pour fuel"** pours whale oil, then oil (wood only if you carry no oil) until the tank is full.
+- **Fireplace: "Cook fish"** cooks every raw fish you carry. "Eat fish" eats from the pack first, then storage.
+- Dying or leaving spills the whole pack on the ground.
+- Server-owned contents; clients see them as `Pack_<Kind>`, `PackTotal`, `PackSize` attributes and the `Gained` remote.
+- Icons (ForgeGUI, batch 3) are in `assets/ui3`.
+
+Testing note: Studio's execute_luau runs in its own script VM, so `require(ResourceService)` there gets a separate copy. Test through real gameplay (fire the `Punch` remote, trigger prompts from the client) instead.

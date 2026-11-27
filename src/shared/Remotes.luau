@@ -9,7 +9,8 @@ local FOLDER_NAME = "Remotes"
 local EVENT_NAMES = {
 	"PhaseChanged", -- server -> client: (info: Types.PhaseInfo)
 	"Notify", -- server -> client: (text: string, kind: string?)
-	"DropItem", -- client -> server: ()
+	"DropItem", -- client -> server: (kind: string?) drop one item from the backpack
+	"Gained", -- server -> client: (kind: string, amount: number, from: Vector3?) backpack pop-up
 	"AimBeam", -- client -> server: (angleDegrees: number)
 	"ReleaseBeam", -- client -> server: ()
 	"Struggle", -- client -> server: () while held by the Hollow

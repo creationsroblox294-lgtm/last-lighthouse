@@ -101,7 +101,7 @@ local function strike()
 	-- a lightning rod: someone carrying scrap
 	for _, p in Players:GetPlayers() do
 		local root = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
-		if ResourceService.GetCarried(p) == "Scrap" and root and root:IsA("BasePart") and rng:NextNumber() < S.RodChance then
+		if ResourceService.Has(p, "Scrap") and root and root:IsA("BasePart") and rng:NextNumber() < S.RodChance then
 			local at = landAt(root.Position.X, root.Position.Z)
 			if at then
 				bolt(at, S.Warn, true)
