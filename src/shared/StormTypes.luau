@@ -791,7 +791,37 @@ add({
 		Vignette = "rbxassetid://134594259515631",
 	},
 })
-planned("Waterspout", "Waterspout", "Catastrophic", "Funnel clouds are forming.", "WATERSPOUTS!")
+add({
+	Id = "Waterspout",
+	Name = "Waterspout",
+	Tier = "Catastrophic",
+	Built = true,
+	Forecast = "Funnel clouds are forming.",
+	Blurb = "WATERSPOUTS! Stay under a roof. If one comes for you, run sideways. They drop fish when they come ashore.",
+	Color = Color3.fromRGB(150, 185, 175),
+	DrainMultiplier = 3.6,
+	EnemyMultiplier = 0.7,
+	-- a green-black squall (Storms/Waterspout drives the spouts; StormFX/Waterspout draws them)
+	Look = {
+		ClockTime = 15.8,
+		Brightness = 1.9,
+		Exposure = 0.1,
+		Ambient = Color3.fromRGB(110, 125, 118),
+		FogDensity = 0.24,
+		FogHaze = 1.8,
+		FogColor = Color3.fromRGB(105, 120, 115),
+	},
+	Textures = {
+		Wall = "rbxassetid://92427076433173",
+		Drop = "rbxassetid://109078171013574",
+		Leaf = "rbxassetid://105999470506423",
+		Splash = "rbxassetid://113883163440180",
+		Spray = "rbxassetid://73237222095974",
+		Glint = "rbxassetid://117341182317330",
+		Haze = "rbxassetid://97891709522639",
+		Smoke = "rbxassetid://79085558579719",
+	},
+})
 planned("Eclipse", "Eclipse Storm", "Catastrophic", "The sun is going dark.", "ECLIPSE!")
 planned("Deluge", "The Deluge", "Catastrophic", "The water will not stop rising.", "THE DELUGE! Get to the top floors!")
 planned("Cursed", "Cursed Storm", "Catastrophic", "???", "A Cursed Storm!")
