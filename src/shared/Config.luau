@@ -413,6 +413,35 @@ Config.UI = {
 	Close = "rbxassetid://106544436890645",
 	Scroll = "rbxassetid://120339115701712",
 	Title = "rbxassetid://71480370745486",
+	-- second ForgeGUI batch (assets/ui2)
+	Button = "rbxassetid://137062335151305",
+	ButtonHover = "rbxassetid://108726786216249",
+	ButtonPressed = "rbxassetid://106200185023492",
+	ButtonSlice = { 70, 60, 349, 155 }, -- of a 419 x 215 image
+	RoundButton = "rbxassetid://122642978503847",
+	KeyCap = "rbxassetid://129982340998297",
+	PillButton = "rbxassetid://86858655445993",
+	Banner = "rbxassetid://96068142357961",
+	BannerWarning = "rbxassetid://126540455069885",
+	BannerGood = "rbxassetid://82075596620027",
+	BannerSlice = { 100, 40, 924, 91 }, -- of a 1024 x 131 image
+	EmblemVictory = "rbxassetid://94087578494116",
+	EmblemDefeat = "rbxassetid://74640245521908",
+	Items = {
+		Wood = "rbxassetid://91980494978443",
+		Scrap = "rbxassetid://119798328808768",
+		Oil = "rbxassetid://135453853959089",
+		Fish = "rbxassetid://94309066936797",
+		WhaleOil = "rbxassetid://82152139673138",
+		LampFlame = "rbxassetid://105301563620009",
+	},
+	Tiers = {
+		Blessed = "rbxassetid://96520154830014",
+		Mild = "rbxassetid://75373980603425",
+		Moderate = "rbxassetid://91513044684346",
+		Severe = "rbxassetid://114326433558046",
+		Catastrophic = "rbxassetid://117050525729384",
+	},
 }
 
 return Config

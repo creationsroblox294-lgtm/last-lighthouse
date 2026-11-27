@@ -275,3 +275,12 @@ foliage pack, Stridity tree pack) stored in `ServerStorage.TreeLibrary`.
   adds to `Transform` after the Animator (works with Motor6D and AnimationConstraint joints).
 - Creatures fade in out of a puff of fog and dissolve into fog when they die; animation
   cross-fades are longer and eased.
+
+## UI art, batch 2 (ForgeGUI)
+- `assets/ui2`: item icons (wood, scrap, oil, fish, whale oil, lamp), a button with hover and
+  pressed looks, round / key-cap / pill buttons, three banners (plain, warning, good news), five
+  storm-severity badges and the victory / defeat emblems. Cut out by `tools/forge_cutout2.py`
+  (removes baked-in checkerboards, tints stray magenta to amber). Ids in `Config.UI`.
+- Used for: storage icons + counts, the carried item's icon, skinned HUD and intro buttons
+  (`UISkin.button`), message toasts and the alarm banner on banners (`UISkin.banner`), the
+  storm's severity badge on the storm panel, and the emblem on the won / lost screens.

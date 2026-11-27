@@ -16,6 +16,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
+local UISkin = require(script.Parent:WaitForChild("UISkin"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local FogController = require(script.Parent:WaitForChild("FogController"))
 
@@ -245,7 +246,7 @@ local function makeGui()
 	local skip = Instance.new("TextButton")
 	skip.AnchorPoint = Vector2.new(1, 1)
 	skip.Position = UDim2.new(1, -24, 1, -24)
-	skip.Size = UDim2.fromOffset(130, 44)
+	skip.Size = UDim2.fromOffset(150, 54)
 	skip.BackgroundColor3 = Color3.fromRGB(20, 22, 26)
 	skip.BackgroundTransparency = 0.3
 	skip.TextColor3 = Color3.fromRGB(255, 236, 200)
@@ -257,6 +258,7 @@ local function makeGui()
 	corner.CornerRadius = UDim.new(0.3, 0)
 	corner.Parent = skip
 	skip.Parent = gui
+	UISkin.button(skip)
 	gui.Parent = player:WaitForChild("PlayerGui")
 	return {
 		gui = gui,

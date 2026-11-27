@@ -133,10 +133,24 @@ local function button(parent: Instance, name: string, label: string, pos: UDim2,
 	limit.MaxTextSize = 20
 	limit.Parent = b
 	local min = Instance.new("UISizeConstraint")
-	min.MinSize = Vector2.new(90, 40)
+	min.MinSize = Vector2.new(110, 44)
 	min.Parent = b
 	b.Parent = parent
+	UISkin.button(b)
 	return b
+end
+
+local UI = Config.UI
+
+local function icon(parent: Instance, image: string, size: number): ImageLabel
+	local i = Instance.new("ImageLabel")
+	i.BackgroundTransparency = 1
+	i.Image = image
+	i.ScaleType = Enum.ScaleType.Fit
+	i.Size = UDim2.fromOffset(size, size)
+	i.ZIndex = 2
+	i.Parent = parent
+	return i
 end
 
 local function formatTime(seconds: number): string
@@ -170,6 +184,16 @@ function HUDController.Start()
 	local stormLabel = text(panel, "StormLabel", UDim2.fromScale(0.04, 0.05), UDim2.fromScale(0.92, 0.4), Enum.Font.GothamBlack, 32)
 	local phaseLabel = text(panel, "PhaseLabel", UDim2.fromScale(0.04, 0.46), UDim2.fromScale(0.92, 0.26), Enum.Font.GothamBold, 20)
 	local timerLabel = text(panel, "TimerLabel", UDim2.fromScale(0.04, 0.72), UDim2.fromScale(0.92, 0.24), Enum.Font.GothamMedium, 18)
+	-- the storm's severity badge, hanging off the panel's left end
+	local tierBadge = icon(panel, UI.Tiers.Mild, 64)
+	tierBadge.Name = "TierBadge"
+	tierBadge.AnchorPoint = Vector2.new(0.5, 0.5)
+	tierBadge.Position = UDim2.new(0, -6, 0.5, 0)
+	tierBadge.Size = UDim2.fromScale(0.62, 0.62)
+	local badgeAspect = Instance.new("UIAspectRatioConstraint")
+	badgeAspect.Parent = tierBadge
+	tierBadge.SizeConstraint = Enum.SizeConstraint.RelativeYY
+	tierBadge.Visible = false
 
 	-- Boss bar (under the storm panel)
 	local bossBack, bossFill, bossLabel = bar(gui, "BossBar", UDim2.new(0.3, 0, 0.14, 0), UDim2.fromScale(0.4, 0.035), Color3.fromRGB(110, 200, 120))
@@ -198,21 +222,74 @@ function HUDController.Start()
 	rightLimit.MaxSize = Vector2.new(400, 60)
 	rightLimit.Parent = right
 	UISkin.panel(right)
-	local storageLabel = text(right, "Storage", UDim2.fromScale(0.04, 0.1), UDim2.fromScale(0.92, 0.8), Enum.Font.GothamBold, 18)
+	-- storage: an icon and a count for each resource
+	local storageRow = Instance.new("Frame")
+	storageRow.Name = "Storage"
+	storageRow.BackgroundTransparency = 1
+	storageRow.Position = UDim2.fromScale(0.03, 0.05)
+	storageRow.Size = UDim2.fromScale(0.94, 0.9)
+	storageRow.ZIndex = 2
+	local rowLayout = Instance.new("UIListLayout")
+	rowLayout.FillDirection = Enum.FillDirection.Horizontal
+	rowLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	rowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	rowLayout.Padding = UDim.new(0.02, 0)
+	rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	rowLayout.Parent = storageRow
+	storageRow.Parent = right
+	local storageCounts: { [string]: TextLabel } = {}
+	for i, kind in { "Wood", "Scrap", "Oil", "Fish" } do
+		local cell = Instance.new("Frame")
+		cell.Name = kind
+		cell.BackgroundTransparency = 1
+		cell.Size = UDim2.fromScale(0.23, 1)
+		cell.LayoutOrder = i
+		cell.Parent = storageRow
+		local pic = icon(cell, UI.Items[kind], 0)
+		pic.Size = UDim2.fromScale(0.55, 1)
+		local count = text(cell, "Count", UDim2.fromScale(0.55, 0.1), UDim2.fromScale(0.45, 0.8), Enum.Font.GothamBlack, 22, Enum.TextXAlignment.Left)
+		count.ZIndex = 2
+		storageCounts[kind] = count
+	end
 
 	-- Carrying + beam control (bottom, above the hotbar)
 	local carryLabel = text(gui, "Carrying", UDim2.fromScale(0.3, 0.74), UDim2.fromScale(0.4, 0.04), Enum.Font.GothamBold, 20)
+	local carryIcon = icon(gui, UI.Items.Wood, 50)
+	carryIcon.Name = "CarryIcon"
+	carryIcon.AnchorPoint = Vector2.new(1, 0)
+	carryIcon.Position = UDim2.new(0.5, -84, 0.785, 0)
+	carryIcon.Visible = false
 	local dropButton = button(gui, "DropButton", "Drop", UDim2.fromScale(0.5, 0.785), UDim2.fromScale(0.12, 0.055), Color3.fromRGB(150, 90, 60))
 	local releaseButton = button(gui, "ReleaseBeam", "Let go of the beam", UDim2.fromScale(0.5, 0.66), UDim2.fromScale(0.24, 0.06), Color3.fromRGB(170, 130, 50))
 
 	-- Alarm banner (middle) and messages
-	local banner = text(gui, "Banner", UDim2.fromScale(0.15, 0.3), UDim2.fromScale(0.7, 0.08), Enum.Font.GothamBlack, 40)
-	local subBanner = text(gui, "SubBanner", UDim2.fromScale(0.2, 0.385), UDim2.fromScale(0.6, 0.045), Enum.Font.GothamBold, 24)
+	local bannerHolder = Instance.new("Frame")
+	bannerHolder.Name = "AlarmBanner"
+	bannerHolder.BackgroundTransparency = 1
+	bannerHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+	bannerHolder.Position = UDim2.fromScale(0.5, 0.52)
+	bannerHolder.Size = UDim2.fromScale(0.62, 0.1)
+	bannerHolder.Visible = false
+	bannerHolder.Parent = gui
+	local bannerLimit = Instance.new("UISizeConstraint")
+	bannerLimit.MaxSize = Vector2.new(900, 96)
+	bannerLimit.Parent = bannerHolder
+	local bannerSkin = UISkin.banner(bannerHolder, UI.Banner)
+	local banner = text(bannerHolder, "Banner", UDim2.fromScale(0.1, 0.18), UDim2.fromScale(0.8, 0.64), Enum.Font.GothamBlack, 40)
+	banner.ZIndex = 2
+	local emblem = icon(gui, UI.EmblemVictory, 0)
+	emblem.Name = "EndEmblem"
+	emblem.AnchorPoint = Vector2.new(0.5, 1)
+	emblem.Position = UDim2.fromScale(0.5, 0.46)
+	emblem.Size = UDim2.fromScale(0.22, 0.22)
+	emblem.SizeConstraint = Enum.SizeConstraint.RelativeYY
+	emblem.Visible = false
+	local subBanner = text(gui, "SubBanner", UDim2.fromScale(0.2, 0.585), UDim2.fromScale(0.6, 0.045), Enum.Font.GothamBold, 24)
 	local toasts = Instance.new("Frame")
 	toasts.Name = "Messages"
 	toasts.BackgroundTransparency = 1
 	toasts.Position = UDim2.fromScale(0.25, 0.19)
-	toasts.Size = UDim2.fromScale(0.5, 0.2)
+	toasts.Size = UDim2.fromScale(0.5, 0.3)
 	local layout = Instance.new("UIListLayout")
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -235,20 +312,30 @@ function HUDController.Start()
 			return
 		end
 		order += 1
-		local l = text(toasts, "Message", UDim2.new(), UDim2.new(1, 0, 0, 30), Enum.Font.GothamBold, 22)
+		-- each message sits on a small banner (green for good news, red for alarms)
+		local l = Instance.new("Frame")
+		l.Name = "Message"
+		l.BackgroundTransparency = 1
+		l.Size = UDim2.new(1, 0, 0, 38)
 		l.LayoutOrder = order
-		l.Text = message
-		l.TextColor3 = if kind then (KIND_COLOR[kind] or Color3.new(1, 1, 1)) else Color3.new(1, 1, 1)
+		l.Parent = toasts
+		local skin = UISkin.banner(l, if kind == "Good" then UI.BannerGood elseif kind == "Alarm" then UI.BannerWarning else UI.Banner)
+		skin.ImageTransparency = 0.1
+		local words = text(l, "Text", UDim2.fromScale(0.09, 0.14), UDim2.fromScale(0.82, 0.72), Enum.Font.GothamBold, 20)
+		words.ZIndex = 2
+		words.TextStrokeTransparency = 0.3
+		words.Text = message
+		words.TextColor3 = if kind then (KIND_COLOR[kind] or Color3.new(1, 1, 1)) else Color3.new(1, 1, 1)
 		local items = toasts:GetChildren()
 		local count = 0
 		for _, child in items do
-			if child:IsA("TextLabel") then
+			if child:IsA("Frame") then
 				count += 1
 			end
 		end
 		if count > 4 then
 			for _, child in items do
-				if child:IsA("TextLabel") and child ~= l then
+				if child:IsA("Frame") and child ~= l then
 					child:Destroy()
 					break
 				end
@@ -286,6 +373,18 @@ function HUDController.Start()
 		if (phaseName == "Warning" or phaseName == "Storm") and typeof(special) == "string" and special ~= "" and special ~= "Ordinary" then
 			color = StormTypes.Get(special).Color
 		end
+		-- severity badge once the storm is known (the calm only hints at it)
+		local tierShown = false
+		if phaseName == "Warning" or phaseName == "Storm" or phaseName == "Dawn" then
+			local sid = if typeof(special) == "string" and special ~= "" then special else "Ordinary"
+			local tier = (StormTypes.Get(sid) :: any).Tier
+			local image = if isGreat then UI.Tiers.Catastrophic else (UI.Tiers :: any)[tier or "Mild"]
+			if image then
+				tierBadge.Image = image
+				tierShown = true
+			end
+		end
+		tierBadge.Visible = tierShown
 		stormLabel.Text = title
 		phaseLabel.Text = if storm:GetAttribute("Holding") == true then "Drive off the Tide Caller!" else (PHASE_TEXT[phaseName] or phaseName)
 		phaseLabel.TextColor3 = color
@@ -326,13 +425,9 @@ function HUDController.Start()
 	refreshTower()
 
 	local function refreshStorage()
-		storageLabel.Text = string.format(
-			"Wood %d   Scrap %d   Oil %d   Fish %d",
-			SharedState.number(storage, "Wood", 0),
-			SharedState.number(storage, "Scrap", 0),
-			SharedState.number(storage, "Oil", 0),
-			SharedState.number(storage, "Fish", 0)
-		)
+		for kind, label in storageCounts do
+			label.Text = tostring(SharedState.number(storage, kind, 0))
+		end
 	end
 	storage.AttributeChanged:Connect(refreshStorage)
 	refreshStorage()
@@ -354,6 +449,11 @@ function HUDController.Start()
 		local kind = player:GetAttribute("Carrying")
 		local carrying = typeof(kind) == "string"
 		carryLabel.Text = if carrying then `Carrying {ITEM_NAME[kind :: string] or kind}` else ""
+		local pic = if carrying then UI.Items[kind :: string] else nil
+		carryIcon.Visible = pic ~= nil
+		if pic then
+			carryIcon.Image = pic
+		end
 		dropButton.Visible = carrying
 	end
 	player:GetAttributeChangedSignal("Carrying"):Connect(refreshCarry)
@@ -369,12 +469,15 @@ function HUDController.Start()
 			local phase = storm:GetAttribute("Phase")
 			local outAt = SharedState.number(light, "LightsOutAt", 0)
 			local lost = player:GetAttribute("Lost")
+			local skinImage, emblemImage = UI.BannerWarning, nil
 			if phase == "Lost" then
+				emblemImage = UI.EmblemDefeat
 				banner.Text = "THE LIGHT WENT OUT"
 				banner.TextColor3 = PHASE_COLOR.Lost
 				local reason = run:GetAttribute("LostReason")
 				subBanner.Text = `{if typeof(reason) == "string" then reason else ""}  A new run starts soon.`
 			elseif phase == "Won" then
+				skinImage, emblemImage = UI.BannerGood, UI.EmblemVictory
 				banner.Text = "YOU KEPT THE LIGHT BURNING"
 				banner.TextColor3 = PHASE_COLOR.Won
 				subBanner.Text = "More storms are coming in the next update."
@@ -384,12 +487,19 @@ function HUDController.Start()
 				banner.Text = if left > 0 then `LAMP OUT! REFUEL IT: {math.ceil(left)}` else "LAMP OUT! THE FOG IS SWARMING"
 				subBanner.Text = "Take fuel from storage and pour it into the tank in the lamp room."
 			elseif lost == true or lost == "bunk" then
+				skinImage = UI.Banner
 				banner.TextColor3 = Color3.fromRGB(180, 200, 220)
 				banner.Text = "LOST IN THE FOG"
 				subBanner.Text = if lost == "bunk" then "Repair the bunk room to bring you back." else "You'll return at dawn."
 			else
 				banner.Text = ""
 				subBanner.Text = ""
+			end
+			bannerHolder.Visible = banner.Text ~= ""
+			bannerSkin.Image = skinImage
+			emblem.Visible = emblemImage ~= nil
+			if emblemImage then
+				emblem.Image = emblemImage
 			end
 			task.wait(0.2)
 		end

@@ -129,6 +129,92 @@ function UISkin.bar(back: GuiObject, fill: GuiObject): Frame
 	return slot
 end
 
+-- Dress a TextButton as a navy-plank, brass-rimmed button with hover and pressed looks.
+function UISkin.button(b: GuiButton): ImageLabel
+	strip(b)
+	b.BackgroundTransparency = 1
+	b.AutoButtonColor = false
+	local skin = Instance.new("ImageLabel")
+	skin.Name = "Skin"
+	skin.BackgroundTransparency = 1
+	skin.Image = UI.Button
+	skin.ScaleType = Enum.ScaleType.Slice
+	skin.SliceCenter = rect(UI.ButtonSlice)
+	skin.Size = UDim2.fromScale(1, 1)
+	skin.Parent = b
+	skin.ZIndex = 1
+	if b:IsA("TextButton") then
+		-- children draw over their parent, so the words move onto a label above the skin
+		local label = Instance.new("TextLabel")
+		label.Name = "Label"
+		label.BackgroundTransparency = 1
+		label.AnchorPoint = Vector2.new(0.5, 0.5)
+		label.Position = UDim2.fromScale(0.5, 0.5)
+		label.Size = UDim2.fromScale(0.8, 0.62)
+		label.Font = b.Font
+		label.TextScaled = b.TextScaled
+		label.TextSize = b.TextSize
+		label.TextWrapped = true
+		label.Text = b.Text
+		label.TextColor3 = Color3.fromRGB(255, 240, 210)
+		label.TextStrokeColor3 = Color3.fromRGB(20, 16, 10)
+		label.TextStrokeTransparency = 0.35
+		label.ZIndex = 2
+		for _, c in b:GetChildren() do
+			if c:IsA("UITextSizeConstraint") then
+				c:Clone().Parent = label
+			end
+		end
+		label.Parent = b
+		b.TextTransparency = 1
+		b:GetPropertyChangedSignal("Text"):Connect(function()
+			label.Text = b.Text
+		end)
+	end
+	onSize(b, function(size)
+		skin.SliceScale = math.clamp(size.Y / 215 * 1.1, 0.1, 1)
+	end)
+	local hovering, holding = false, false
+	local function look()
+		skin.Image = if holding then UI.ButtonPressed elseif hovering then UI.ButtonHover else UI.Button
+	end
+	b.MouseEnter:Connect(function()
+		hovering = true
+		look()
+	end)
+	b.MouseLeave:Connect(function()
+		hovering, holding = false, false
+		look()
+	end)
+	b.MouseButton1Down:Connect(function()
+		holding = true
+		look()
+	end)
+	b.MouseButton1Up:Connect(function()
+		holding = false
+		look()
+	end)
+	return skin
+end
+
+-- A 9-sliced banner (Banner / BannerWarning / BannerGood) filling `holder` (a frame that
+-- also holds the text; give the text a ZIndex of 2 or more so it sits on the banner)
+function UISkin.banner(holder: GuiObject, image: string): ImageLabel
+	local skin = Instance.new("ImageLabel")
+	skin.Name = "BannerSkin"
+	skin.BackgroundTransparency = 1
+	skin.Image = image
+	skin.ScaleType = Enum.ScaleType.Slice
+	skin.SliceCenter = rect(UI.BannerSlice)
+	skin.Size = UDim2.fromScale(1, 1)
+	skin.ZIndex = 1
+	skin.Parent = holder
+	onSize(holder, function(size)
+		skin.SliceScale = math.clamp(size.Y / 131, 0.1, 1)
+	end)
+	return skin
+end
+
 -- An image button (e.g. the brass X)
 function UISkin.imageButton(image: string): ImageButton
 	local b = Instance.new("ImageButton")
