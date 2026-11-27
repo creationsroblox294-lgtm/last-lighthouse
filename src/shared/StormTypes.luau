@@ -592,7 +592,34 @@ add({
 		Vignette = "rbxassetid://134594259515631",
 	},
 })
-planned("WildSwarm", "Wild Swarm", "Moderate", "The trees are rustling. Something is restless.", "Wild Swarm! The tree animals are frenzied.")
+add({
+	Id = "WildSwarm",
+	Name = "Wild Swarm",
+	Tier = "Moderate",
+	Built = true,
+	Forecast = "The trees are rustling. Something is restless.",
+	Blurb = "Wild Swarm! The tree animals are frenzied. Keep out from under the pines, and take cover when the bats pour out.",
+	Color = Color3.fromRGB(230, 120, 110),
+	DrainMultiplier = 3,
+	EnemyMultiplier = 0.7,
+	-- a bruised dusk (Storms/WildSwarm frenzies the tree animals and sends the bats; StormFX/WildSwarm draws them)
+	Look = {
+		ClockTime = 17.9,
+		Brightness = 2.6,
+		Exposure = 0.3,
+		Ambient = Color3.fromRGB(165, 120, 125),
+		FogDensity = 0.3,
+		FogHaze = 1.6,
+		FogColor = Color3.fromRGB(150, 100, 105),
+	},
+	Textures = {
+		Bat = "rbxassetid://75328773159704",
+		Eyes = "rbxassetid://118183127639555",
+		Leaf = "rbxassetid://105999470506423",
+		Haze = "rbxassetid://97891709522639",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 
 ----------------------------------------------------------------- Severe
 planned("RedTide", "Red Tide", "Severe", "The sea has turned a strange colour.", "Red Tide! Stay out of the water.")

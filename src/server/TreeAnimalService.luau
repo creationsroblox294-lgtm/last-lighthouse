@@ -37,6 +37,7 @@ local rng = Random.new()
 local active: { [Player]: Animal } = {}
 local nextTry: { [Player]: number } = {}
 local folder: Instance
+local frenzy = false -- Wild Swarm: they drop far more often, from further away
 local warnRemote: RemoteEvent
 
 local function now(): number
@@ -117,7 +118,7 @@ local function nearestTree(pos: Vector3): Model?
 	if not grove then
 		return nil
 	end
-	local best, bestD = nil, A.TreeSearchRadius
+	local best, bestD = nil, if frenzy then A.TreeSearchRadius * 1.6 else A.TreeSearchRadius
 	for _, tree in grove:GetChildren() do
 		local trunk = tree:FindFirstChild("Trunk")
 		-- chopped trees are hidden (transparent) until they regrow
@@ -416,13 +417,24 @@ function TreeAnimalService.Start()
 				if not due then
 					nextTry[player] = t + (if fast then 3 else A.FirstDelay)
 				elseif t >= due then
-					nextTry[player] = t + (if fast then 6 else rng:NextNumber(A.MinInterval, A.MaxInterval))
+					nextTry[player] = t + (if fast then 6 elseif frenzy then rng:NextNumber(5, 9) else rng:NextNumber(A.MinInterval, A.MaxInterval))
 					trySpawn(player)
 				end
 			end
 		end
 	end)
 
+end
+
+-- Wild Swarm turns this on for the length of the storm
+function TreeAnimalService.SetFrenzy(on: boolean)
+	frenzy = on
+	if on then
+		local t = now()
+		for _, player in Players:GetPlayers() do
+			nextTry[player] = math.min(nextTry[player] or math.huge, t + rng:NextNumber(2, 5))
+		end
+	end
 end
 
 return TreeAnimalService
