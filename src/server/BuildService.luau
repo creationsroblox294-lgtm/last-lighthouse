@@ -173,6 +173,12 @@ local function floorAtHeight(y: number): string
 	return "LampRoom"
 end
 
+-- crafted Iron Hammer (CraftingService) repairs more per swing
+local function repairMultiplier(player: Player): number
+	local tier = player:GetAttribute("HammerTier")
+	return Config.Crafting.HammerRepairMultiplier[if typeof(tier) == "number" then tier else 1] or 1
+end
+
 -- Hammer: repair the nearest damaged barricade, or the floor you're standing on
 function BuildService.TryRepair(player: Player)
 	local t = os.clock()
@@ -193,7 +199,7 @@ function BuildService.TryRepair(player: Player)
 				Remotes.notify(player, "You need wood or scrap in storage to repair.", nil)
 				return
 			end
-			b.health = math.min(T.BarricadeHealth, b.health + T.BarricadeRepairAmount)
+			b.health = math.min(T.BarricadeHealth, b.health + T.BarricadeRepairAmount * repairMultiplier(player))
 			b.part:SetAttribute("Health", b.health)
 			return
 		end
@@ -222,7 +228,7 @@ function BuildService.TryRepair(player: Player)
 		Remotes.notify(player, "You need wood or scrap in storage to repair.", nil)
 		return
 	end
-	BuildService.RepairFloor(target, T.RepairAmount)
+	BuildService.RepairFloor(target, T.RepairAmount * repairMultiplier(player))
 end
 
 local function makeBarricades()

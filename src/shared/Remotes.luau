@@ -24,6 +24,8 @@ local EVENT_NAMES = {
 	"Sprint", -- client -> server: (wants: boolean) holding the sprint key
 	"StormEvent", -- server -> client: (kind: string, data: any) storm-type moments (meteors...)
 	"StormAct", -- client -> server: (kind: string, data: any) a player reacting to a storm (validated per storm)
+	"Craft", -- client -> server: (recipeId: string) craft at the crafting table
+	"Crafted", -- server -> client: (crafter: Player, recipeId: string) someone crafted something
 }
 
 local Remotes = {}

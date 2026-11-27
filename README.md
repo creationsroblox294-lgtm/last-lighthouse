@@ -374,3 +374,23 @@ Testing teleports needs the published game (2+ accounts, or one account to try a
   - Bone paths: `Shared/WaveAnimData` (sampled at 10 fps from Blender, Catmull-Rom in between). `Client/IntroWaveMesh` moves each bone along its path and turns it with the surface slope every frame. The wave rolls toward the boat at 24 studs/s, so the lip lands on it at the flip.
   - Spray tears off the lip bones as it pitches, and whitewater blows out of the foot as it collapses.
   - The old strip-built wave (`Client/IntroWave`) is the fallback if the asset is missing.
+
+## Crafting table
+- **Where:** a heavy plank workbench on the lighthouse ground floor, against the east wall under the window. It has a vise holding a half-made harpoon head, a lantern, a saw, a mallet, a plane, scrap plates and nails, plus rope, scrap and a keg on the shelf. Built by `tools/BuildCraftingTable.luau` as `Map.Lighthouse.GroundFloor.CraftingTable`.
+- **How:** walk up and press the "Craft" prompt to open the crafting window (`Client/CraftingController`).
+  - Recipe cards show their cost in green or red against the crew's storage.
+  - The window works with touch, mouse and gamepad, scales down on phones, and closes with X, Esc, B or walking away.
+  - The server (`Server/CraftingService`) checks the distance, prerequisites and storage again, then spends the materials.
+- **Recipes** (`Config.Crafting`, materials from the shared storage, everything lasts for the run):
+
+  | Recipe | For | Cost | Effect |
+  |---|---|---|---|
+  | Barbed Harpoon | you | 3 wood, 1 scrap | harpoon 25 → 38 damage, dark steel head (affordable in the first minute) |
+  | Whaler's Harpoon | you | 6 scrap, 1 oil (after Barbed) | 50 damage, +6 range, shiny brass head |
+  | Iron Hammer | you | 3 scrap, 1 wood | repairs ×2 per swing |
+  | Flare Bandolier | you | 2 oil, 2 scrap | flare reload 40s → 25s, brass-trimmed gun |
+  | Polished Lens | whole crew | 6 scrap, 3 oil | light radius 55 → 70 |
+  | Great Fresnel Lens | whole crew | 12 scrap, 6 oil, 4 wood (after Polished) | light radius 85 |
+
+- **Everyone sees it:** upgraded tools are tinted (`CombatService.Dress`), and crafting announces "X crafted a Whaler's Harpoon!" to the whole server.
+- Personal upgrades are player attributes (`HarpoonTier`, `HammerTier`, `FlareTier`). Crew upgrades are in `State.Crafting`. Everything resets with `StormDirector.RunReset`.

@@ -8,6 +8,7 @@
 --   Storage Wood, Scrap, Oil, Fish
 --   Boss    Active, Health, MaxHealth
 --   Run     LostReason
+--   Crafting  <crew recipe id> = true once the crew has built it
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")

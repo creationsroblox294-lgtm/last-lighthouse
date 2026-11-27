@@ -4,6 +4,9 @@
 --            (works the same on touch, gamepad and mouse). Server checks range and cooldown.
 --   Hammer:  repairs the floor you're on, or a nearby barricade (costs wood or scrap).
 --   Flare:   a flare gun that drives the Hollow off (recharges every 40s).
+-- Crafted upgrades (CraftingService) live on the player as attributes HarpoonTier / HammerTier /
+-- FlareTier; the numbers come from Config.Crafting, and Dress() tints the upgraded tools so
+-- everyone can see them.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -160,6 +163,15 @@ local function streak(from: Vector3, to: Vector3)
 	Debris:AddItem(p, 0.15)
 end
 
+local function tierOf(player: Player, stat: string): number
+	local v = player:GetAttribute(stat)
+	return if typeof(v) == "number" then v else 1
+end
+
+local function harpoonStat(player: Player, byTier: { number }, default: number): number
+	return byTier[tierOf(player, "HarpoonTier")] or default
+end
+
 local function harpoon(player: Player)
 	local t = os.clock()
 	if t - (lastHarpoon[player] or 0) < C.HarpoonCooldown then
@@ -170,9 +182,10 @@ local function harpoon(player: Player)
 	if not root then
 		return
 	end
-	local target = EnemyService.FindTarget(root.Position, root.CFrame.LookVector, C.HarpoonRange, C.HarpoonConeDegrees)
+	local range = harpoonStat(player, Config.Crafting.HarpoonRange, C.HarpoonRange)
+	local target = EnemyService.FindTarget(root.Position, root.CFrame.LookVector, range, C.HarpoonConeDegrees)
 	if not target then
-		if HollowService.TryHarpoon(root.Position, root.CFrame.LookVector, C.HarpoonRange, C.HarpoonConeDegrees) then
+		if HollowService.TryHarpoon(root.Position, root.CFrame.LookVector, range, C.HarpoonConeDegrees) then
 			local hp = HollowService.GetPosition()
 			if hp then
 				streak(root.Position + Vector3.new(0, 1, 0), hp + Vector3.new(0, 5, 0))
@@ -184,12 +197,12 @@ local function harpoon(player: Player)
 	if targetRoot and targetRoot:IsA("BasePart") then
 		streak(root.Position + Vector3.new(0, 1, 0), targetRoot.Position)
 	end
-	target:TakeDamage(C.HarpoonDamage)
+	target:TakeDamage(harpoonStat(player, Config.Crafting.HarpoonDamage, C.HarpoonDamage))
 end
 
 local function flare(player: Player)
 	local t = os.clock()
-	local cooldown = Config.Hollow.FlareCooldown
+	local cooldown = Config.Crafting.FlareCooldown[tierOf(player, "FlareTier")] or Config.Hollow.FlareCooldown
 	if t - (lastFlare[player] or -math.huge) < cooldown then
 		Remotes.notify(player, `The flare gun is reloading ({math.ceil(cooldown - (t - (lastFlare[player] or 0)))}s).`, nil)
 		return
@@ -207,6 +220,40 @@ local function flare(player: Player)
 end
 
 local templates: { Tool } = {}
+
+-- which part of each tool shows its upgrade, and the stat that upgrades it
+local TINTED = { Harpoon = { role = "Metal", stat = "HarpoonTier" }, Hammer = { role = "Metal", stat = "HammerTier" }, Flare = { role = "Dark", stat = "FlareTier" } }
+local TIP = {
+	Harpoon = { "Harpoon", "Barbed Harpoon", "Whaler's Harpoon" },
+	Hammer = { "Hammer", "Iron Hammer" },
+	Flare = { "Flare gun", "Flare gun + bandolier" },
+}
+
+-- Tint the player's tools to match their crafted upgrades (called on spawn and after crafting)
+function CombatService.Dress(player: Player)
+	local holders = { player:FindFirstChildOfClass("Backpack"), player.Character }
+	for _, holder in holders do
+		if not holder then
+			continue
+		end
+		for _, tool in holder:GetChildren() do
+			local spec = TINTED[tool.Name]
+			if not (tool:IsA("Tool") and spec) then
+				continue
+			end
+			local tier = tierOf(player, spec.stat)
+			local tints = (Config.Crafting.ToolTint :: any)[tool.Name]
+			local tint: Color3? = tints and tints[tier]
+			tool.ToolTip = TIP[tool.Name][tier] or tool.Name
+			for _, part in tool:GetChildren() do
+				if part:IsA("BasePart") and string.match(part.Name, "_(%w+)$") == spec.role then
+					part.Color = tint or LOOKS[spec.role].color
+					part.Reflectance = if tint and tier >= 3 then 0.25 else 0
+				end
+			end
+		end
+	end
+end
 
 local function equip(player: Player)
 	local backpack = player:WaitForChild("Backpack", 10)
@@ -227,6 +274,7 @@ local function equip(player: Player)
 		end)
 		tool.Parent = backpack
 	end
+	CombatService.Dress(player)
 end
 
 function CombatService.Start()

@@ -256,6 +256,39 @@ Config.Resources = {
 	WalkSpeed = 16,
 }
 
+-- The crafting table on the lighthouse's ground floor (CraftingService). Materials come out
+-- of the shared storage, so crafting competes with repairs and fuel: a real choice every night.
+-- Personal upgrades belong to whoever crafts them (and show on their tools for everyone to see);
+-- crew upgrades help the whole party. Everything lasts for the run and resets with it.
+Config.Crafting = {
+	UseRange = 12, -- studs from the table
+	Recipes = {
+		{ Id = "BarbedHarpoon", Name = "Barbed Harpoon", Scope = "Personal", Stat = "HarpoonTier", Level = 2,
+			Cost = { Wood = 3, Scrap = 1 }, Blurb = "Iron barbs that bite deep. Harpoon damage 25 to 38, dark steel head." }, -- affordable from the first minute: an early goal
+		{ Id = "WhalersHarpoon", Name = "Whaler's Harpoon", Scope = "Personal", Stat = "HarpoonTier", Level = 3, Requires = "BarbedHarpoon",
+			Cost = { Scrap = 6, Oil = 1 }, Blurb = "A gleaming brass whaling iron. 50 damage and 6 studs more reach." },
+		{ Id = "IronHammer", Name = "Iron Hammer", Scope = "Personal", Stat = "HammerTier", Level = 2,
+			Cost = { Scrap = 3, Wood = 1 }, Blurb = "A heavy iron head. Every repair swing fixes twice as much." },
+		{ Id = "FlareBandolier", Name = "Flare Bandolier", Scope = "Personal", Stat = "FlareTier", Level = 2,
+			Cost = { Oil = 2, Scrap = 2 }, Blurb = "Spare cartridges on a brass-trimmed gun. Reloads in 25s instead of 40s." },
+		{ Id = "PolishedLens", Name = "Polished Lens", Scope = "Crew", Stat = "LensTier", Level = 2,
+			Cost = { Scrap = 6, Oil = 3 }, Blurb = "The light's safe circle grows from 55 to 70 studs, for the whole crew." },
+		{ Id = "FresnelLens", Name = "Great Fresnel Lens", Scope = "Crew", Stat = "LensTier", Level = 3, Requires = "PolishedLens",
+			Cost = { Scrap = 12, Oil = 6, Wood = 4 }, Blurb = "Rings of cut glass throw the light to 85 studs. The fog hates it." },
+	},
+	-- what the tiers do
+	HarpoonDamage = { 25, 38, 50 },
+	HarpoonRange = { 32, 32, 38 },
+	HammerRepairMultiplier = { 1, 2 },
+	FlareCooldown = { 40, 25 },
+	-- how upgraded tools look (the metal parts of the Blender tool models)
+	ToolTint = {
+		Harpoon = { nil, Color3.fromRGB(58, 62, 70), Color3.fromRGB(214, 168, 72) },
+		Hammer = { nil, Color3.fromRGB(52, 54, 60) },
+		Flare = { nil, Color3.fromRGB(200, 156, 64) },
+	},
+}
+
 -- Snakes, spiders and bats that drop out of the trees (TreeAnimalService)
 Config.TreeAnimals = {
 	FirstDelay = 40, -- seconds after joining before the first one

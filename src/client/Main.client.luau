@@ -27,6 +27,7 @@ local StormFXController = require(script.Parent:WaitForChild("StormFXController"
 local StormReactionController = require(script.Parent:WaitForChild("StormReactionController"))
 local BackpackController = require(script.Parent:WaitForChild("BackpackController"))
 local FlareController = require(script.Parent:WaitForChild("FlareController"))
+local CraftingController = require(script.Parent:WaitForChild("CraftingController"))
 
 FogController.Start()
 LightController.Start()
@@ -43,6 +44,7 @@ StormFXController.Start()
 StormReactionController.Start()
 BackpackController.Start()
 FlareController.Start()
+CraftingController.Start()
 task.spawn(IntroController.Start)
 
 -- Preload the tool meshes (Harpoon, Hammer, Flare) so they don't pop in on first equip
