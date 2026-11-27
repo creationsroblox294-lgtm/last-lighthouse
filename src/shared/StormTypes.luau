@@ -822,7 +822,36 @@ add({
 		Smoke = "rbxassetid://79085558579719",
 	},
 })
-planned("Eclipse", "Eclipse Storm", "Catastrophic", "The sun is going dark.", "ECLIPSE!")
+add({
+	Id = "Eclipse",
+	Name = "Eclipse Storm",
+	Tier = "Catastrophic",
+	Built = true,
+	Forecast = "The sun is going dark.",
+	Blurb = "ECLIPSE! When the dark comes, get into the lamp light and stay there. Your shadow will follow you.",
+	Color = Color3.fromRGB(255, 190, 120),
+	DrainMultiplier = 3.5,
+	EnemyMultiplier = 1.1,
+	-- a clear, too-still afternoon (Storms/Eclipse runs the eclipse and the shadows; StormFX/Eclipse draws it)
+	Look = {
+		ClockTime = 15.3,
+		Brightness = 2.8,
+		Exposure = 0,
+		Ambient = Color3.fromRGB(140, 135, 130),
+		FogDensity = 0.12,
+		FogHaze = 0.8,
+		FogColor = Color3.fromRGB(190, 180, 170),
+	},
+	Textures = {
+		Corona = "rbxassetid://122784544707400",
+		Sun = "rbxassetid://134572259343771",
+		Eyes = "rbxassetid://118183127639555",
+		Glint = "rbxassetid://117341182317330",
+		Smoke = "rbxassetid://79085558579719",
+		Ember = "rbxassetid://110074077788286",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 planned("Deluge", "The Deluge", "Catastrophic", "The water will not stop rising.", "THE DELUGE! Get to the top floors!")
 planned("Cursed", "Cursed Storm", "Catastrophic", "???", "A Cursed Storm!")
 
