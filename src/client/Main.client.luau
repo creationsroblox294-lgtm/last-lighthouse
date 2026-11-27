@@ -4,6 +4,8 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local GameMode = require(Shared:WaitForChild("GameMode"))
+-- one type system for every screen (Merriweather headings, Builder Sans text)
+require(script.Parent:WaitForChild("Typography")).Start()
 -- the core loop's Brass counter and Keeper's Locker work in the harbor and on the island
 require(script.Parent:WaitForChild("KeeperController")).Start()
 if GameMode.Wait() == "Lobby" then

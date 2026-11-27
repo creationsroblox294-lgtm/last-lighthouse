@@ -265,6 +265,10 @@ local function equip(player: Player)
 		return
 	end
 	for _, template in templates do
+		-- never hand out a second copy (a respawn and a late start can both call this)
+		if backpack:FindFirstChild(template.Name) or (player.Character and player.Character:FindFirstChild(template.Name)) then
+			continue
+		end
 		local tool = template:Clone()
 		local kind = tool.Name
 		tool.Activated:Connect(function()

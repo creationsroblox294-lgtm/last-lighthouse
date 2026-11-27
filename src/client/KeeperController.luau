@@ -28,6 +28,7 @@ local GOLD = Color3.fromRGB(255, 214, 120)
 local TEXT = Color3.fromRGB(255, 240, 210)
 local SOFT = Color3.fromRGB(200, 210, 225)
 local BRASS = Color3.fromRGB(232, 184, 92)
+local COIN = "rbxassetid://73592926731933" -- assets/ui/BrassCoin.png
 
 local function label(parent: Instance, text: string, size: UDim2, pos: UDim2, font: Enum.Font, maxSize: number, color: Color3?): TextLabel
 	local l = Instance.new("TextLabel")
@@ -100,22 +101,15 @@ function KeeperController.Start()
 	ps.Color = BRASS
 	ps.Thickness = 2
 	ps.Parent = pill
-	local coin = Instance.new("Frame")
-	coin.Size = UDim2.fromOffset(28, 28)
-	coin.Position = UDim2.fromOffset(9, 9)
-	coin.BackgroundColor3 = BRASS
-	local cc = Instance.new("UICorner")
-	cc.CornerRadius = UDim.new(0.5, 0)
-	cc.Parent = coin
-	local cs = Instance.new("UIStroke")
-	cs.Color = Color3.fromRGB(140, 96, 40)
-	cs.Thickness = 2
-	cs.Parent = coin
-	local anchorMark = label(coin, "B", UDim2.fromScale(1, 1), UDim2.new(), Enum.Font.GothamBlack, 18, Color3.fromRGB(110, 70, 24))
-	anchorMark.TextXAlignment = Enum.TextXAlignment.Center
-	anchorMark.TextStrokeTransparency = 1
+	-- the brass coin (a lighthouse stamped in brass)
+	local coin = Instance.new("ImageLabel")
+	coin.BackgroundTransparency = 1
+	coin.Image = COIN
+	coin.Size = UDim2.fromOffset(36, 36)
+	coin.Position = UDim2.fromOffset(5, 5)
+	coin.ZIndex = 2
 	coin.Parent = pill
-	local brassText = label(pill, "0", UDim2.new(1, -48, 1, -10), UDim2.fromOffset(44, 5), Enum.Font.GothamBlack, 24, GOLD)
+	local brassText = label(pill, "0", UDim2.new(1, -52, 1, -12), UDim2.fromOffset(46, 6), Enum.Font.GothamBlack, 24, GOLD)
 	pill.Parent = bar
 	local lockerButton = button(bar, "Locker", UDim2.fromOffset(108, 46), UDim2.fromOffset(138, 0), 20)
 	lockerButton.Name = "LockerButton"
@@ -135,14 +129,17 @@ function KeeperController.Start()
 	-- window
 	local shade = Instance.new("Frame")
 	shade.Name = "Locker"
-	shade.Size = UDim2.fromScale(1, 1)
-	shade.BackgroundTransparency = 1
+	shade.Size = UDim2.new(1, 0, 1, 80)
+	shade.Position = UDim2.fromOffset(0, -60)
+	shade.BackgroundColor3 = Color3.new(0, 0, 0)
+	shade.BackgroundTransparency = 0.45 -- dim the world behind the window
+	shade.BorderSizePixel = 0
 	shade.Visible = false
 	shade.ZIndex = 2
 	shade.Parent = gui
 	local window = Instance.new("Frame")
 	window.AnchorPoint = Vector2.new(0.5, 0.5)
-	window.Position = UDim2.fromScale(0.5, 0.5)
+	window.Position = UDim2.new(0.5, 0, 0.5, 30)
 	window.Size = UDim2.fromOffset(700, 500)
 	window.BackgroundTransparency = 1
 	UISkin.panel(window)
@@ -245,7 +242,9 @@ function KeeperController.Start()
 		local brass = num("Brass")
 		header.Text = `<font color="#ffd678">{brass} Brass</font>   ·   Keeper level {math.max(1, num("KeeperLevel"))}   ·   earn more by surviving storms`
 		for name, b in tabButtons do
+			-- the open tab is bright gold; the others step back
 			b.TextColor3 = if name == tab then GOLD else SOFT
+			b.TextTransparency = if name == tab then 0 else 0.35
 		end
 		clearCards()
 		if tab == "Perks" then
@@ -325,6 +324,7 @@ function KeeperController.Start()
 		end
 		open = on
 		shade.Visible = on
+		bar.Visible = not on -- the window shows your Brass itself
 		if on then
 			fit()
 			render()

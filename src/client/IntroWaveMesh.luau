@@ -174,7 +174,8 @@ function IntroWaveMesh.new(parent: Instance, centerX: number, seaY: number, hitZ
 		lipFx = lipFx,
 		footFx = footFx,
 	}, IntroWaveMesh)
-	self:update(0)
+	-- out of sight (deep under the sea) until the cutscene's first update(w)
+	body.CFrame = CFrame.new(centerX, seaY - 400, hitZ)
 	return self
 end
 

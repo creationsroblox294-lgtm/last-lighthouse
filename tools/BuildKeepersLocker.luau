@@ -2,7 +2,7 @@
 -- Builds the Keeper's Locker in the harbor: a covered market stall by the spawn, with a counter
 -- (KeeperService puts the "Open" prompt on Lobby.KeepersLocker.Counter), a striped awning, a
 -- carved sign, the four lanterns lit up on a shelf, an oilskin coat on a peg and a chest of brass.
--- Run in Studio (command bar / MCP).
+-- Run in Studio (command bar / MCP), then tools/PropsPass.luau to swap in the Blender ship lanterns.
 
 local lobby = workspace.Lobby
 local old = lobby:FindFirstChild("KeepersLocker")
@@ -69,13 +69,17 @@ end
 local stripes = 8
 for i = 1, stripes do
 	local x = -5.5 + (i - 0.5) * (11 / stripes)
-	deco(part("Awning" .. i, Vector3.new(11 / stripes, 0.12, 8), CFrame.new(x, 9.3, 0.4) * CFrame.Angles(math.rad(-12), 0, 0), if i % 2 == 0 then CREAM else NAVY, Enum.Material.Fabric))
+	deco(part("Awning" .. i, Vector3.new(11 / stripes, 0.12, 8), CFrame.new(x, 9.3, 0.4) * CFrame.Angles(math.rad(12), 0, 0), if i % 2 == 0 then CREAM else NAVY, Enum.Material.Fabric))
 	-- scalloped edge
 	deco(part("Flap" .. i, Vector3.new(11 / stripes - 0.1, 0.7, 0.08), CFrame.new(x, 8.15, 4.35), if i % 2 == 0 then CREAM else NAVY, Enum.Material.Fabric))
 end
 
 -- the sign
-local sign = part("Sign", Vector3.new(7, 1.5, 0.3), CFrame.new(0, 10.6, 3.6), DARK, Enum.Material.Wood)
+-- hung under the front of the awning on two chains, at eye level
+local sign = part("Sign", Vector3.new(6.2, 1.25, 0.25), CFrame.new(0, 7.15, 3.95), DARK, Enum.Material.Wood)
+for _, x in { -2.6, 2.6 } do
+	deco(part("SignChain", Vector3.new(0.07, 0.75, 0.07), CFrame.new(x, 8.1, 3.95), Color3.fromRGB(60, 60, 64), Enum.Material.Metal))
+end
 deco(sign)
 for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
 	local sg = Instance.new("SurfaceGui")

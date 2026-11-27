@@ -426,3 +426,25 @@ Persistent progress that brings players back (`Server/KeeperService`, `Client/Ke
   - `StormDirector.RunFinished` reports wins.
   - DataService and KeeperService now run on lobby servers too.
 - **Studio testing:** set the workspace attribute `KeeperGiveBrass` to a number to pay everyone (Studio only).
+
+## Visual pass: type, props, polish
+- **Typography (`Client/Typography`)** gives every screen one type system:
+  - Merriweather Heavy (a nautical serif) for headings and big numbers.
+  - Builder Sans Bold for buttons and labels, Builder Sans Medium for body text.
+  - It maps the old Gotham/FredokaOne text as it appears, in menus and on in-world signs and nameplates.
+- **Brass coin** icon (`assets/ui/BrassCoin.png`, decal 73592926731933): a lighthouse stamped in brass, replacing the old "B" circle.
+- **Ship lantern** (`assets/props/ShipLantern.fbx`, asset 89765255194301, template `ReplicatedStorage.Assets.ShipLantern`) is a brass lantern modelled in Blender with a glass globe, wire cage and flame. It replaced every blocky lantern:
+  - the dock and path posts (they still swing and flicker)
+  - the four boats
+  - the Keeper's Locker shelf (one colour each) and its hanging lanterns
+  - the crafting table
+  - the island's Old Dock and floor-3 lanterns
+  - the belt lanterns
+- **Ship bell** (`assets/props/ShipBell.fbx`, asset 113361678155578) replaced the orange blob in the harbour's bell frame.
+- **Swapping it all in:** `tools/PropsPass.luau` does all of the swaps after the builders.
+- **Keeper's Locker stall:** the awning now slopes the right way, and the sign hangs under it on chains.
+- **Windows:** the crafting and Locker windows dim the world behind them, and the Locker's open tab is highlighted.
+- **Nameplates** are smaller and hidden from their own player.
+- **Fixes:**
+  - Players no longer get a second set of tools.
+  - The intro's wave stays hidden until it rises.

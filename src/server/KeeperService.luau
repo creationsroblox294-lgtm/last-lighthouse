@@ -84,15 +84,16 @@ local function nameplate(player: Player, profile: Profile)
 	if not gui then
 		local g = Instance.new("BillboardGui")
 		g.Name = "KeeperTag"
-		g.Size = UDim2.new(7, 0, 1.6, 0)
-		g.StudsOffset = Vector3.new(0, 2.3, 0)
-		g.MaxDistance = 90
+		g.Size = UDim2.new(5, 0, 1.15, 0)
+		g.StudsOffset = Vector3.new(0, 2.1, 0)
+		g.MaxDistance = 70
 		g.LightInfluence = 0
+		g.PlayerToHideFrom = player -- you don't need your own name over your head
 		local name = Instance.new("TextLabel")
 		name.Name = "PlayerName"
 		name.BackgroundTransparency = 1
 		name.Size = UDim2.fromScale(1, 0.55)
-		name.Font = Enum.Font.GothamBold
+		name.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold)
 		name.TextScaled = true
 		name.TextColor3 = Color3.new(1, 1, 1)
 		name.TextStrokeTransparency = 0.4
@@ -102,7 +103,7 @@ local function nameplate(player: Player, profile: Profile)
 		title.BackgroundTransparency = 1
 		title.Position = UDim2.fromScale(0, 0.55)
 		title.Size = UDim2.fromScale(1, 0.45)
-		title.Font = Enum.Font.GothamBlack
+		title.FontFace = Font.new("rbxasset://fonts/families/Merriweather.json", Enum.FontWeight.Heavy)
 		title.TextScaled = true
 		title.TextStrokeTransparency = 0.35
 		title.Parent = g
@@ -132,59 +133,65 @@ local function belt(player: Player, profile: Profile)
 	if not (l and hip and hip:IsA("BasePart")) then
 		return
 	end
-	local model = Instance.new("Model")
+	-- the brass ship lantern (ReplicatedStorage.Assets.ShipLantern, modelled in Blender), small,
+	-- with its glass and flame in this lantern's colour, welded at the hip
+	local template = ReplicatedStorage:FindFirstChild("Assets") and (ReplicatedStorage :: any).Assets:FindFirstChild("ShipLantern")
+	if not template then
+		return
+	end
+	local model = template:Clone() :: Model
 	model.Name = "KeeperLantern"
-	local brass = if l.Id == "Gilded" then Color3.fromRGB(232, 190, 90) else Color3.fromRGB(150, 112, 58)
-	local anchor = hip.CFrame * CFrame.new(hip.Size.X / 2 + 0.25, -0.35, 0.1)
-	local function piece(name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
-		local p = Instance.new("Part")
-		p.Name = name
-		p.Size = size
-		p.CFrame = anchor * offset
-		p.Color = color
-		p.Material = material
-		p.CanCollide = false
-		p.CanQuery = false
-		p.CanTouch = false
-		p.Massless = true
-		p.CastShadow = false
-		if shape then
-			p.Shape = shape
-		end
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = hip
-		weld.Part1 = p
-		weld.Parent = p
-		p.Parent = model
-		return p
-	end
-	piece("Base", Vector3.new(0.42, 0.08, 0.42), CFrame.new(0, -0.3, 0), brass, Enum.Material.Metal)
-	local glass = piece("Glass", Vector3.new(0.34, 0.5, 0.34), CFrame.new(), l.Color, Enum.Material.Glass)
-	glass.Transparency = 0.35
-	local flame = piece("Flame", Vector3.new(0.12, 0.2, 0.12), CFrame.new(0, -0.05, 0), l.Color, Enum.Material.Neon)
-	piece("Cap", Vector3.new(0.42, 0.1, 0.42), CFrame.new(0, 0.3, 0), brass, Enum.Material.Metal)
-	piece("Ring", Vector3.new(0.05, 0.26, 0.26), CFrame.new(0, 0.45, 0), brass, Enum.Material.Metal, Enum.PartType.Cylinder)
-	for _, x in { -0.17, 0.17 } do
-		for _, z in { -0.17, 0.17 } do
-			piece("Bar", Vector3.new(0.04, 0.5, 0.04), CFrame.new(x, 0, z), brass, Enum.Material.Metal)
+	model:ScaleTo(0.42)
+	local _, size = model:GetBoundingBox()
+	local at = hip.CFrame * CFrame.new(hip.Size.X / 2 + 0.22, -0.2 - size.Y / 2, 0.1)
+	model:PivotTo(at * (model:GetPivot() - model:GetPivot().Position).Rotation)
+	local bb = model:GetBoundingBox()
+	model:PivotTo(model:GetPivot() + (at.Position - bb.Position))
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") then
+			p.Anchored = false
+			p.Massless = true
+			p.CanCollide = false
+			p.CanQuery = false
+			p.CanTouch = false
+			p.CastShadow = false
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = hip
+			weld.Part1 = p
+			weld.Parent = p
 		end
 	end
-	local light = Instance.new("PointLight")
-	light.Color = l.Color
-	light.Brightness = 1.2
-	light.Range = 9
-	light.Parent = flame
-	if l.Sparkle then
-		local sparks = Instance.new("ParticleEmitter")
-		sparks.Texture = "rbxassetid://118122779843195"
-		sparks.Color = ColorSequence.new(l.Color)
-		sparks.LightEmission = 1
-		sparks.Rate = 6
-		sparks.Lifetime = NumberRange.new(0.6, 1.1)
-		sparks.Speed = NumberRange.new(0.5, 1.5)
-		sparks.SpreadAngle = Vector2.new(180, 180)
-		sparks.Size = NumberSequence.new(0.12, 0)
-		sparks.Parent = flame
+	local glass = model:FindFirstChild("Glass") :: BasePart?
+	local flame = model:FindFirstChild("Flame") :: BasePart?
+	local brassPart = model:FindFirstChild("Brass") :: BasePart?
+	if glass then
+		glass.Color = (l.Color :: Color3):Lerp(Color3.new(1, 1, 1), 0.25)
+	end
+	if brassPart and l.Id == "Gilded" then
+		brassPart.Color = Color3.fromRGB(236, 196, 96)
+		brassPart.Reflectance = 0.2
+	end
+	if flame then
+		flame.Color = l.Color
+		local light = flame:FindFirstChildOfClass("PointLight")
+		if light then
+			light.Color = l.Color
+			light.Brightness = 1.2
+			light.Range = 9
+			light.Shadows = false
+		end
+		if l.Sparkle then
+			local sparks = Instance.new("ParticleEmitter")
+			sparks.Texture = "rbxassetid://118122779843195"
+			sparks.Color = ColorSequence.new(l.Color)
+			sparks.LightEmission = 1
+			sparks.Rate = 6
+			sparks.Lifetime = NumberRange.new(0.6, 1.1)
+			sparks.Speed = NumberRange.new(0.5, 1.5)
+			sparks.SpreadAngle = Vector2.new(180, 180)
+			sparks.Size = NumberSequence.new(0.12, 0)
+			sparks.Parent = flame
+		end
 	end
 	model.Parent = character
 end

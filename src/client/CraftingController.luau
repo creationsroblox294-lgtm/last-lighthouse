@@ -80,6 +80,14 @@ function CraftingController.Start()
 	gui.DisplayOrder = 12
 	gui.Enabled = false
 
+	local dim = Instance.new("Frame")
+	dim.Name = "Dim"
+	dim.Size = UDim2.new(1, 0, 1, 0)
+	dim.BackgroundColor3 = Color3.new(0, 0, 0)
+	dim.BackgroundTransparency = 0.45 -- dim the world behind the window
+	dim.BorderSizePixel = 0
+	dim.Parent = gui
+
 	local window = Instance.new("Frame")
 	window.Name = "Window"
 	window.AnchorPoint = Vector2.new(0.5, 0.5)
