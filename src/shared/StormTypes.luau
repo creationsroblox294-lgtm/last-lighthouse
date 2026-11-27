@@ -852,7 +852,36 @@ add({
 		Vignette = "rbxassetid://134594259515631",
 	},
 })
-planned("Deluge", "The Deluge", "Catastrophic", "The water will not stop rising.", "THE DELUGE! Get to the top floors!")
+add({
+	Id = "Deluge",
+	Name = "The Deluge",
+	Tier = "Catastrophic",
+	Built = true,
+	Forecast = "The water will not stop rising.",
+	Blurb = "THE DELUGE! Get to the top floors! The flood will cover the whole island, and something lives in it.",
+	Color = Color3.fromRGB(110, 140, 120),
+	DrainMultiplier = 3.7,
+	EnemyMultiplier = 0.8,
+	-- a grey wall of rain (Storms/Deluge raises the flood; StormFX/Deluge draws it)
+	Look = {
+		ClockTime = 16,
+		Brightness = 1.8,
+		Exposure = 0.05,
+		Ambient = Color3.fromRGB(115, 122, 120),
+		FogDensity = 0.38,
+		FogHaze = 2.4,
+		FogColor = Color3.fromRGB(120, 128, 128),
+	},
+	Textures = {
+		Flood = "rbxassetid://85778360873044",
+		Drop = "rbxassetid://109078171013574",
+		Streak = "rbxassetid://134764319364715",
+		Ripple = "rbxassetid://136329093448726",
+		Splash = "rbxassetid://113883163440180",
+		Bubble = "rbxassetid://83414063738231",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 planned("Cursed", "Cursed Storm", "Catastrophic", "???", "A Cursed Storm!")
 
 StormTypes.List = list
