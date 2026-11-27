@@ -197,21 +197,51 @@ local function makeGui()
 	flash.BorderSizePixel = 0
 	flash.ZIndex = 7
 	flash.Parent = gui
-	local caption = label(gui, Enum.Font.Merriweather, 30)
-	caption.AnchorPoint = Vector2.new(0.5, 1)
-	caption.Position = UDim2.new(0.5, 0, 0.9, -18)
-	caption.Size = UDim2.new(0.8, 0, 0, 40)
-	local title = label(gui, Enum.Font.FredokaOne, 72)
+	-- captions are written on a parchment scroll (its middle rows are squashed by the
+	-- 9-slice so the scroll is shorter than the art)
+	local scrollW = math.min(600, workspace.CurrentCamera.ViewportSize.X * 0.86)
+	local k = scrollW / 1024
+	local scroll = Instance.new("ImageLabel")
+	scroll.Name = "CaptionScroll"
+	scroll.BackgroundTransparency = 1
+	scroll.Image = Config.UI.Scroll
+	scroll.ImageTransparency = 1
+	scroll.ScaleType = Enum.ScaleType.Slice
+	scroll.SliceCenter = Rect.new(600, 150, 700, 290)
+	scroll.SliceScale = k
+	scroll.AnchorPoint = Vector2.new(0.5, 1)
+	scroll.Position = UDim2.new(0.5, 0, 1, -14)
+	scroll.Size = UDim2.fromOffset(scrollW, 326 * k)
+	scroll.ZIndex = 5
+	scroll.Parent = gui
+	local caption = label(scroll, Enum.Font.Merriweather, 30)
+	caption.AnchorPoint = Vector2.new(0.5, 0.5)
+	caption.Position = UDim2.fromScale(0.47, 0.56)
+	caption.Size = UDim2.fromScale(0.66, 0.46)
+	caption.TextColor3 = Color3.fromRGB(62, 38, 16)
+	caption.TextScaled = true
+	caption.TextWrapped = true
+	caption.ZIndex = 6
+	local capMax = Instance.new("UITextSizeConstraint")
+	capMax.MaxTextSize = 26
+	capMax.Parent = caption
+	-- the title is the brass name plate
+	local title = Instance.new("ImageLabel")
+	title.Name = "TitlePlate"
+	title.BackgroundTransparency = 1
+	title.Image = Config.UI.Title
+	title.ImageTransparency = 1
 	title.AnchorPoint = Vector2.new(0.5, 0.5)
 	title.Position = UDim2.fromScale(0.5, 0.3)
-	title.Size = UDim2.new(0.9, 0, 0, 90)
-	title.Text = "THE LAST LIGHTHOUSE"
-	title.TextColor3 = Color3.fromRGB(255, 214, 120)
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
-	stroke.Color = Color3.fromRGB(110, 35, 25)
-	stroke.Transparency = 1
-	stroke.Parent = title
+	title.Size = UDim2.fromScale(0.62, 0.62 * 239 / 1024)
+	title.ZIndex = 5
+	local plateAspect = Instance.new("UIAspectRatioConstraint")
+	plateAspect.AspectRatio = 1024 / 239
+	plateAspect.Parent = title
+	local plateMax = Instance.new("UISizeConstraint")
+	plateMax.MaxSize = Vector2.new(780, 182)
+	plateMax.Parent = title
+	title.Parent = gui
 	local skip = Instance.new("TextButton")
 	skip.AnchorPoint = Vector2.new(1, 1)
 	skip.Position = UDim2.new(1, -24, 1, -24)
@@ -233,8 +263,8 @@ local function makeGui()
 		fade = fade,
 		flash = flash,
 		caption = caption,
+		scroll = scroll,
 		title = title,
-		titleStroke = stroke,
 		skip = skip,
 	}
 end
@@ -520,7 +550,7 @@ function IntroController.Start()
 	}
 	-- fetch the animations before the film starts so nobody T-poses on frame one
 	do
-		local list = {}
+		local list: { Instance } = { ui.scroll, ui.title } -- and the scroll / name plate art
 		for _, id in ids do
 			if id ~= "" then
 				local a = Instance.new("Animation")
@@ -731,10 +761,9 @@ function IntroController.Start()
 			end
 		end
 		ui.caption.TextTransparency = 1 - capAlpha
-		ui.caption.TextStrokeTransparency = 1 - capAlpha * 0.6
+		ui.scroll.ImageTransparency = 1 - capAlpha
 		local titleAlpha = math.min(clamp01((t - TITLE) / 1.2), clamp01((FINISH - 0.7 - t) / 0.7))
-		ui.title.TextTransparency = 1 - titleAlpha
-		ui.titleStroke.Transparency = 1 - titleAlpha
+		ui.title.ImageTransparency = 1 - titleAlpha
 		ui.title.Position = UDim2.fromScale(0.5, 0.3 - 0.02 * clamp01((t - TITLE) / 4))
 
 		-- lightning
@@ -924,9 +953,8 @@ function IntroController.Start()
 	-- wrap up: black, hand the world back, wake up for real on the beach
 	ui.skip.Visible = false
 	ui.caption.TextTransparency = 1
-	ui.caption.TextStrokeTransparency = 1
-	ui.title.TextTransparency = 1
-	ui.titleStroke.Transparency = 1
+	ui.scroll.ImageTransparency = 1
+	ui.title.ImageTransparency = 1
 	ui.flash.BackgroundTransparency = 1
 	if skipped then
 		TweenService:Create(ui.fade, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()

@@ -20,6 +20,8 @@ local MinimapController = {}
 local player = Players.LocalPlayer
 
 local M = Config.Minimap
+local UI = Config.UI
+local UISkin = require(script.Parent:WaitForChild("UISkin"))
 local CREAM = Color3.fromRGB(255, 240, 210)
 local GOLD = Color3.fromRGB(255, 204, 92)
 local INK = Color3.fromRGB(24, 28, 36)
@@ -129,7 +131,12 @@ end
 
 function MinimapController.Start()
 	local touchOnly = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-	local miniSize = if touchOnly then 140 else 190
+	local miniSize = if touchOnly then 108 else 150
+	-- the brass porthole frame is drawn around the map disc; its opening matches the disc
+	local hole = UI.PortholeHole
+	local portW = miniSize / (2 * hole[3])
+	local portH = portW * 439 / 456
+	local ext = math.ceil(portW * hole[1] - miniSize / 2) -- how far the brass reaches past the disc
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "MinimapGui"
@@ -143,7 +150,7 @@ function MinimapController.Start()
 	mini.Name = "Minimap"
 	mini.AnchorPoint = Vector2.new(0, 1)
 	-- on phones the thumbstick lives in the bottom-left, so sit above it
-	mini.Position = if touchOnly then UDim2.new(0, 12, 1, -230) else UDim2.new(0, 18, 1, -36)
+	mini.Position = if touchOnly then UDim2.new(0, 6 + ext, 1, -222 - ext) else UDim2.new(0, 10 + ext, 1, -24 - ext)
 	mini.Size = UDim2.fromOffset(miniSize, miniSize)
 	mini.BackgroundTransparency = 1
 	mini.Parent = gui
@@ -159,22 +166,15 @@ function MinimapController.Start()
 	disc.ImageRectSize = Vector2.new(M.ImageSize / M.Zoom, M.ImageSize / M.Zoom)
 	corner(disc, UDim.new(1, 0))
 	disc.Parent = mini
-	local ring = Instance.new("Frame")
-	ring.Size = UDim2.fromScale(1, 1)
-	ring.BackgroundTransparency = 1
-	ring.ZIndex = 9
-	corner(ring, UDim.new(1, 0))
-	stroke(ring, CREAM, 3)
-	ring.Parent = mini
-	local ring2 = Instance.new("Frame")
-	ring2.AnchorPoint = Vector2.new(0.5, 0.5)
-	ring2.Position = UDim2.fromScale(0.5, 0.5)
-	ring2.Size = UDim2.new(1, 6, 1, 6)
-	ring2.BackgroundTransparency = 1
-	ring2.ZIndex = 9
-	corner(ring2, UDim.new(1, 0))
-	stroke(ring2, INK, 2)
-	ring2.Parent = mini
+	local port = Instance.new("ImageLabel")
+	port.Name = "Porthole"
+	port.BackgroundTransparency = 1
+	port.Image = UI.Porthole
+	port.AnchorPoint = Vector2.new(hole[1], hole[2])
+	port.Position = UDim2.fromScale(0.5, 0.5)
+	port.Size = UDim2.fromOffset(portW, portH)
+	port.ZIndex = 9
+	port.Parent = mini
 
 	local miniMates = Instance.new("Folder")
 	miniMates.Parent = mini
@@ -184,13 +184,14 @@ function MinimapController.Start()
 
 	local north = label(mini, "N", 13)
 	north.AnchorPoint = Vector2.new(0.5, 0.5)
-	north.Position = UDim2.new(0.5, 0, 0, -12) -- just above the rim
+	north.Position = UDim2.new(0.5, 0, 0, -ext * 0.45) -- on the brass rim
 	north.TextColor3 = GOLD
 	north.ZIndex = 10
 
 	local hint = label(mini, if touchOnly then "Tap for map" else "M  ·  Map", 12)
 	hint.AnchorPoint = Vector2.new(0.5, 0)
-	hint.Position = UDim2.new(0.5, 0, 1, 6)
+	hint.Position = UDim2.new(0.5, 0, 1, ext - 4)
+	hint.ZIndex = 10
 	hint.TextTransparency = 0.15
 
 	local miniButton = Instance.new("TextButton")
@@ -219,21 +220,19 @@ function MinimapController.Start()
 	big.AnchorPoint = Vector2.new(0.5, 0.5)
 	big.Position = UDim2.fromScale(0.5, 0.52)
 	big.Size = UDim2.fromScale(0.78, 0.78)
-	big.BackgroundColor3 = INK
 	big.BorderSizePixel = 0
 	big.Visible = false
 	big.ZIndex = 21
-	corner(big, UDim.new(0, 16))
-	stroke(big, CREAM, 3)
 	local aspect = Instance.new("UIAspectRatioConstraint")
 	aspect.AspectRatio = 1
 	aspect.Parent = big
 	big.Parent = gui
+	UISkin.panel(big)
 
 	local bigImg = Instance.new("ImageLabel")
 	bigImg.AnchorPoint = Vector2.new(0.5, 0.5)
 	bigImg.Position = UDim2.fromScale(0.5, 0.5)
-	bigImg.Size = UDim2.new(1, -16, 1, -16)
+	bigImg.Size = UDim2.new(1, -26, 1, -26)
 	bigImg.BackgroundTransparency = 1
 	bigImg.Image = M.Image
 	bigImg.ZIndex = 22
@@ -244,22 +243,32 @@ function MinimapController.Start()
 	title.Font = Enum.Font.FredokaOne
 	title.TextColor3 = GOLD
 	title.AnchorPoint = Vector2.new(0.5, 0)
-	title.Position = UDim2.new(0.5, 0, 0, 16)
-	title.ZIndex = 30
+	title.AnchorPoint = Vector2.new(0.5, 0.5)
+	title.Position = UDim2.new(0.5, 0, 0, 2)
+	title.ZIndex = 31
+	title.TextStrokeTransparency = 0.3
+	-- a small navy-and-brass plaque behind the title, hanging over the top edge
+	local plaque = Instance.new("Frame")
+	plaque.Name = "TitlePlaque"
+	plaque.AnchorPoint = Vector2.new(0.5, 0.5)
+	plaque.Position = UDim2.new(0.5, 0, 0, 2)
+	plaque.Size = UDim2.fromOffset(230, 50)
+	plaque.ZIndex = 30
+	plaque.Parent = big
+	UISkin.panel(plaque).ZIndex = 30
+	title.Size = UDim2.fromOffset(200, 34)
+	title.AutomaticSize = Enum.AutomaticSize.None
+	title.TextScaled = true
+	local titleMax = Instance.new("UITextSizeConstraint")
+	titleMax.MaxTextSize = 30
+	titleMax.Parent = title
 
-	local close = Instance.new("TextButton")
-	close.AnchorPoint = Vector2.new(1, 0)
-	close.Position = UDim2.new(1, -14, 0, 14)
-	close.Size = UDim2.fromOffset(40, 40)
-	close.BackgroundColor3 = INK
-	close.BackgroundTransparency = 0.15
-	close.Text = "X"
-	close.Font = Enum.Font.GothamBold
-	close.TextSize = 20
-	close.TextColor3 = CREAM
-	close.ZIndex = 30
-	corner(close, UDim.new(1, 0))
-	stroke(close, CREAM, 2)
+	local close = UISkin.imageButton(UI.Close)
+	close.Name = "Close"
+	close.AnchorPoint = Vector2.new(0.5, 0.5)
+	close.Position = UDim2.new(1, -10, 0, 10)
+	close.Size = UDim2.fromOffset(52, 52)
+	close.ZIndex = 32
 	close.Parent = big
 
 	local legend = label(big, '<font color="#FFFFFF">●</font> You      <font color="#6EBEFF">●</font> Teammates      <font color="#FFCC5C">●</font> The lighthouse', 15)

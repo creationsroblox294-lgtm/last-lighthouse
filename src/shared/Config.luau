@@ -393,4 +393,21 @@ Config.LookTweenSeconds = {
 	Lost = 3,
 }
 
+-- UI art (ForgeGUI pieces cut out by tools/forge_cutout.py, see assets/ui). Slice rects are
+-- in image pixels: left, top, right, bottom of the stretchable middle.
+Config.UI = {
+	Panel = "rbxassetid://116537048370739",
+	PanelSlice = { 80, 55, 944, 175 },
+	PanelHeight = 222,
+	Bar = "rbxassetid://70671316398304",
+	BarSlice = { 130, 75, 894, 155 },
+	BarHeight = 229,
+	BarInset = { 106, 60, 106, 57 },
+	Porthole = "rbxassetid://116033756945071",
+	PortholeHole = { 0.4874, 0.4954, 0.3341 }, -- opening centre x, y and radius (fractions of width)
+	Close = "rbxassetid://106544436890645",
+	Scroll = "rbxassetid://120339115701712",
+	Title = "rbxassetid://71480370745486",
+}
+
 return Config

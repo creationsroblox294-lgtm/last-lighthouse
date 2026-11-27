@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local UISkin = require(script.Parent:WaitForChild("UISkin"))
 local SharedState = require(Shared:WaitForChild("SharedState"))
 local StormTypes = require(Shared:WaitForChild("StormTypes"))
 
@@ -107,7 +108,9 @@ local function bar(parent: Instance, name: string, pos: UDim2, size: UDim2, colo
 	fill.Parent = back
 	local label = text(back, "Label", UDim2.fromScale(0.04, 0), UDim2.fromScale(0.92, 1), Enum.Font.GothamBold, 16, Enum.TextXAlignment.Left)
 	label.ZIndex = 2
+	label.TextStrokeTransparency = 0.2
 	back.Parent = parent
+	UISkin.bar(back, fill)
 	return back, fill, label
 end
 
@@ -163,10 +166,7 @@ function HUDController.Start()
 	panelLimit.MinSize = Vector2.new(220, 68)
 	panelLimit.MaxSize = Vector2.new(440, 115)
 	panelLimit.Parent = panel
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 2
-	stroke.Transparency = 0.3
-	stroke.Parent = panel
+	local stormSkin = UISkin.panel(panel)
 	local stormLabel = text(panel, "StormLabel", UDim2.fromScale(0.04, 0.05), UDim2.fromScale(0.92, 0.4), Enum.Font.GothamBlack, 32)
 	local phaseLabel = text(panel, "PhaseLabel", UDim2.fromScale(0.04, 0.46), UDim2.fromScale(0.92, 0.26), Enum.Font.GothamBold, 20)
 	local timerLabel = text(panel, "TimerLabel", UDim2.fromScale(0.04, 0.72), UDim2.fromScale(0.92, 0.24), Enum.Font.GothamMedium, 18)
@@ -181,6 +181,7 @@ function HUDController.Start()
 	leftLimit.MinSize = Vector2.new(170, 110)
 	leftLimit.MaxSize = Vector2.new(300, 170)
 	leftLimit.Parent = left
+	UISkin.panel(left)
 	local _, fuelFill, fuelLabel = bar(left, "Fuel", UDim2.fromScale(0.05, 0.07), UDim2.fromScale(0.9, 0.26), Color3.fromRGB(255, 205, 90))
 	local floorBars: { [string]: { fill: Frame, label: TextLabel } } = {}
 	local floorNames = { GroundFloor = "Ground floor", BunkRoom = "Bunk room", LampRoom = "Lamp room" }
@@ -191,11 +192,12 @@ function HUDController.Start()
 	end
 
 	-- Storage (top right)
-	local right = frame(gui, "StoragePanel", UDim2.fromScale(0.99, 0.015), UDim2.fromScale(0.2, 0.07), Vector2.new(1, 0))
+	local right = frame(gui, "StoragePanel", UDim2.fromScale(0.99, 0.015), UDim2.fromScale(0.26, 0.07), Vector2.new(1, 0))
 	local rightLimit = Instance.new("UISizeConstraint")
-	rightLimit.MinSize = Vector2.new(170, 40)
-	rightLimit.MaxSize = Vector2.new(320, 60)
+	rightLimit.MinSize = Vector2.new(200, 40)
+	rightLimit.MaxSize = Vector2.new(400, 60)
 	rightLimit.Parent = right
+	UISkin.panel(right)
 	local storageLabel = text(right, "Storage", UDim2.fromScale(0.04, 0.1), UDim2.fromScale(0.92, 0.8), Enum.Font.GothamBold, 18)
 
 	-- Carrying + beam control (bottom, above the hotbar)
@@ -287,7 +289,7 @@ function HUDController.Start()
 		stormLabel.Text = title
 		phaseLabel.Text = if storm:GetAttribute("Holding") == true then "Drive off the Tide Caller!" else (PHASE_TEXT[phaseName] or phaseName)
 		phaseLabel.TextColor3 = color
-		stroke.Color = color
+		stormSkin.ImageColor3 = Color3.new(1, 1, 1):Lerp(color, 0.3)
 	end
 	storm.AttributeChanged:Connect(function(attribute)
 		if attribute ~= "PhaseEndsAt" then
