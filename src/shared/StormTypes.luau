@@ -762,7 +762,35 @@ add({
 })
 
 ----------------------------------------------------------------- Catastrophic
-planned("Maelstrom", "Maelstrom", "Catastrophic", "The sea is turning in circles.", "MAELSTROM!")
+add({
+	Id = "Maelstrom",
+	Name = "Maelstrom",
+	Tier = "Catastrophic",
+	Built = true,
+	Forecast = "The sea is turning in circles.",
+	Blurb = "MAELSTROM! Stay out of the water and away from the shore: it drags everything in.",
+	Color = Color3.fromRGB(60, 150, 165),
+	DrainMultiplier = 3.8,
+	EnemyMultiplier = 0.8,
+	-- a dark churning sea (Storms/Maelstrom moves the whirlpool in and sends the lashes; StormFX/Maelstrom draws it)
+	Look = {
+		ClockTime = 16.2,
+		Brightness = 2,
+		Exposure = 0.1,
+		Ambient = Color3.fromRGB(110, 135, 140),
+		FogDensity = 0.22,
+		FogHaze = 1.6,
+		FogColor = Color3.fromRGB(105, 130, 135),
+	},
+	Textures = {
+		Whirl = "rbxassetid://134756359623059",
+		Column = "rbxassetid://84306705064146",
+		Foam = "rbxassetid://119411769037011",
+		Spray = "rbxassetid://73237222095974",
+		Haze = "rbxassetid://97891709522639",
+		Vignette = "rbxassetid://134594259515631",
+	},
+})
 planned("Waterspout", "Waterspout", "Catastrophic", "Funnel clouds are forming.", "WATERSPOUTS!")
 planned("Eclipse", "Eclipse Storm", "Catastrophic", "The sun is going dark.", "ECLIPSE!")
 planned("Deluge", "The Deluge", "Catastrophic", "The water will not stop rising.", "THE DELUGE! Get to the top floors!")
