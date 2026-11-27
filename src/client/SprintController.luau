@@ -12,6 +12,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local UISkin = require(script.Parent:WaitForChild("UISkin"))
 
 local SprintController = {}
 local player = Players.LocalPlayer
@@ -24,7 +25,7 @@ local function makeBar(): (Frame, Frame)
 	local back = Instance.new("Frame")
 	back.AnchorPoint = Vector2.new(0.5, 1)
 	back.Position = UDim2.new(0.5, 0, 1, -96)
-	back.Size = UDim2.fromOffset(220, 10)
+	back.Size = UDim2.fromOffset(240, 22)
 	back.BackgroundColor3 = Color3.fromRGB(20, 24, 30)
 	back.BackgroundTransparency = 0.35
 	back.BorderSizePixel = 0
@@ -39,6 +40,7 @@ local function makeBar(): (Frame, Frame)
 	local c2 = corner:Clone()
 	c2.Parent = fill
 	fill.Parent = back
+	UISkin.bar(back, fill)
 	back.Parent = gui
 	gui.Parent = player:WaitForChild("PlayerGui")
 	return back, fill
