@@ -458,3 +458,6 @@ Persistent progress that brings players back (`Server/KeeperService`, `Client/Ke
 
 ## Hit feel
 When your punch or harpoon lands, the server sends `HitConfirm` to you only, and `HitFeelController` plays hit-stop, a camera kick + shake, an FOV punch, a white flash on the creature, an impact ring and sparks, a damage number, a hit sound and gamepad rumble. A killing blow is stronger (gold edge flash, "SLAIN"). Tune it in `Config.HitFeel`. Sounds: `assets/sfx/` (made by `synth.py`), uploaded as 96700475412033 (punch), 130682457262620 (harpoon), 91238871466493 (kill).
+
+### Boats 5 and 6
+`tools/AddBoats56.luau` adds two more boats moored stern-to off the T-head at the end of the dock (bows to sea, so they row straight out clear of Boats 1–4). It clones Boat1/Boat3 and rebuilds the gangplank, exit point, sign and mooring for the T-head. Run it after `BuildLobby` and `BuildLobbyBoards`; it replaces Boat5/6 if they exist. Nothing in code needs changing: LobbyService and LobbyController use every boat in `Lobby.Boats`.

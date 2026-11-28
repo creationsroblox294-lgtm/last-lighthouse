@@ -1,5 +1,5 @@
 --!strict
--- LobbyService: the harbor. Each boat in Workspace.Lobby.Boats takes a party of up to 4.
+-- LobbyService: the harbor. Each boat in Workspace.Lobby.Boats (six: tools/BuildLobby.luau + tools/AddBoats56.luau) takes a party of up to 4.
 --
 --   * The first person to step onto an empty boat is its leader and creates the party:
 --     they choose its size (1-4) with the ChooseParty remote. Until they do, the boat is
